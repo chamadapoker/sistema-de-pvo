@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=http://localhost:5175">
+    <title>Abrindo PVO Modern...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        a {
+            display: inline-block;
+            padding: 15px 40px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s;
+        }
+
+        a:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-top: 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🚀 PVO Modern</h1>
+        <p>Redirecionando para o sistema...</p>
+        <div class="loading"></div>
+        <br><br>
+        <p>Se não abrir automaticamente, clique no botão:</p>
+        <a href="http://localhost:5175" target="_blank">Abrir Sistema PVO Modern</a>
+
+        <div style="margin-top: 40px; font-size: 0.9em; opacity: 0.8;">
+            <p><strong>Credenciais de Teste:</strong></p>
+            <p>Aluno: aluno@pvo.mil.br / aluno123</p>
+            <p>Instrutor: instrutor@pvo.mil.br / instrutor123</p>
+            <p>Admin: admin@pvo.mil.br / admin123</p>
+        </div>
+    </div>
+</body>
+
+</html>
