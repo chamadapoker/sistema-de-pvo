@@ -13,7 +13,7 @@ export const equipmentService = {
         .order('name');
 
       if (params?.categoryId) {
-        query = query.eq('categoryId', params.categoryId);
+        query = query.eq('category_id', params.categoryId);
       }
 
       if (params?.search) {
@@ -24,7 +24,17 @@ export const equipmentService = {
 
       if (error) throw error;
 
-      return { equipment: data as Equipment[] };
+      // Map return data to camelCase
+      const mappedData = data.map((item: any) => ({
+        ...item,
+        categoryId: item.category_id,
+        imagePath: item.image_path,
+        thumbnailPath: item.thumbnail_path,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at
+      }));
+
+      return { equipment: mappedData as Equipment[] };
     } catch (error) {
       console.error('Erro ao buscar equipamentos:', error);
       return { equipment: [] };
@@ -44,7 +54,16 @@ export const equipmentService = {
 
       if (error) throw error;
 
-      return { equipment: data as Equipment };
+      const mappedItem: any = {
+        ...data,
+        categoryId: data.category_id,
+        imagePath: data.image_path,
+        thumbnailPath: data.thumbnail_path,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+
+      return { equipment: mappedItem as Equipment };
     } catch (error) {
       console.error('Erro ao buscar equipamento:', error);
       throw error;
@@ -69,17 +88,12 @@ export const equipmentService = {
 
   async createEquipment(formData: FormData): Promise<{ message: string; equipment: Equipment }> {
     try {
-      // NOTE: File upload logic is complex to port directly without checking how the backend did it.
-      // For now, we will extract text fields and insert the record. 
-      // Image upload would typically require a separate Step to storage.
-
       const name = formData.get('name') as string;
       const code = formData.get('code') as string;
       const categoryId = Number(formData.get('categoryId'));
       const description = formData.get('description') as string;
       const country = formData.get('country') as string;
 
-      // Upload image if present (Simplification: assuming a default path or handling it separately would be better, but we try a basic upload if file exists)
       const imageFile = formData.get('image') as File;
       let imagePath = '/placeholder.jpg';
 
@@ -101,17 +115,26 @@ export const equipmentService = {
         .insert({
           name,
           code,
-          categoryId,
+          category_id: categoryId,
           description,
           country,
-          imagePath
+          image_path: imagePath
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      return { message: 'Equipamento criado com sucesso', equipment: data as Equipment };
+      const mappedItem: any = {
+        ...data,
+        categoryId: data.category_id,
+        imagePath: data.image_path,
+        thumbnailPath: data.thumbnail_path,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+
+      return { message: 'Equipamento criado com sucesso', equipment: mappedItem as Equipment };
     } catch (error: any) {
       throw new Error(error.message || "Erro ao criar equipamento.");
     }
@@ -119,19 +142,41 @@ export const equipmentService = {
 
   async updateEquipment(id: string, data: Partial<Equipment>): Promise<{ message: string; equipment: Equipment }> {
     try {
-      // Remove nested objects or undefined fields that supabase doesn't like
-      const { category, ...updateData } = data;
+      const updatePayload: any = { ...data };
+
+      // Convert camelCase params to snake_case for DB
+      if (data.categoryId) updatePayload.category_id = data.categoryId;
+      if (data.imagePath) updatePayload.image_path = data.imagePath;
+      if (data.thumbnailPath) updatePayload.thumbnail_path = data.thumbnailPath;
+
+      // Clean up camelCase keys
+      delete updatePayload.categoryId;
+      delete updatePayload.imagePath;
+      delete updatePayload.thumbnailPath;
+      delete updatePayload.category; // nested object not needed for update
+
+      // Clean undefined keys
+      Object.keys(updatePayload).forEach(key => updatePayload[key] === undefined && delete updatePayload[key]);
 
       const { data: updated, error } = await supabase
         .from('equipment')
-        .update(updateData)
+        .update(updatePayload)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
-      return { message: 'Equipamento atualizado', equipment: updated as Equipment };
+      const mappedItem: any = {
+        ...updated,
+        categoryId: updated.category_id,
+        imagePath: updated.image_path,
+        thumbnailPath: updated.thumbnail_path,
+        createdAt: updated.created_at,
+        updatedAt: updated.updated_at,
+      };
+
+      return { message: 'Equipamento atualizado', equipment: mappedItem as Equipment };
     } catch (error: any) {
       throw new Error(error.message || "Erro ao editar equipamento.");
     }
