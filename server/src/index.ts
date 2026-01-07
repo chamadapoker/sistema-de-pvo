@@ -13,7 +13,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'https://sistema-de-pvo.vercel.app'
+];
 app.use(cors({
   origin: (origin, callback) => {
     // Permitir requisições sem origin (como mobile apps ou curl)
