@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ZoomableImage } from '../../components/ui/ZoomableImage';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { countryService, type Country } from '../../services/countryService';
@@ -221,7 +222,7 @@ export function CountryDetailsPage() {
                                     {/* Imagem Thumb se tiver */}
                                     {item.equipment_image && (
                                         <div className="mb-3 h-32 overflow-hidden border border-[#222]">
-                                            <img src={item.equipment_image} className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+                                            <ZoomableImage src={item.equipment_image} alt={item.equipment_name} className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
                                         </div>
                                     )}
 
@@ -343,7 +344,7 @@ export function CountryDetailsPage() {
                                 <div className="space-y-4">
                                     <h3 className="text-gray-500 font-bold uppercase text-xs tracking-widest">Registro Visual</h3>
                                     <div className="rounded border border-[#333] overflow-hidden bg-black">
-                                        <img src={selectedEquipment.equipment_image} alt="" className="w-full h-auto max-h-96 object-contain opacity-90" />
+                                        <ZoomableImage src={selectedEquipment.equipment_image} alt="" className="w-full h-auto max-h-96 object-contain opacity-90" />
                                     </div>
                                 </div>
                             )}

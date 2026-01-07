@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ZoomableImage } from '../../components/ui/ZoomableImage';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { testService, type ScheduledTest, type TestQuestion, type TestAttempt } from '../../services/testService';
@@ -259,7 +260,7 @@ export function TakeTestPage() {
                     {/* Image */}
                     <div className="gaming-card bg-black border-2 border-[#333] aspect-video flex items-center justify-center p-8">
                         {currentEquipment?.imagePath ? (
-                            <img
+                            <ZoomableImage
                                 src={currentEquipment.imagePath}
                                 alt="Equipment"
                                 className="max-h-full max-w-full object-contain"

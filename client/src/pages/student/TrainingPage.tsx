@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { ZoomableImage } from '../../components/ui/ZoomableImage';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { equipmentService } from '../../services/equipmentService';
 import type { Category, Equipment } from '../../types';
@@ -166,10 +167,10 @@ export function TrainingPage() {
                             <div className="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-red-600 z-50 pointer-events-none"></div>
 
                             {/* Lado Esquerdo: VISUAL */}
-                            <div className="w-full md:w-2/3 bg-black relative group">
-                                <img
+                            <div className="w-full md:w-2/3 bg-black relative group flex items-center justify-center p-8">
+                                <ZoomableImage
                                     src={viewItem.imagePath || ''}
-                                    className="w-full h-full object-contain p-8 opacity-90"
+                                    className="w-full h-full object-contain opacity-90"
                                     alt="Visual Principal"
                                 />
                                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grid-me.png')] opacity-20 pointer-events-none"></div>
