@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { equipmentService } from '../../services/equipmentService';
+import { ZoomableImage } from '../../components/ui/ZoomableImage';
 import type { Category, Equipment } from '../../types';
 
 type Mode = 'MENTAL' | 'TYPING';
@@ -304,10 +305,13 @@ export function FlashcardPage() {
                                     <div className="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-blue-500"></div>
                                     <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-blue-500"></div>
 
-                                    <img
-                                        src={current.imagePath || ''}
-                                        className="w-full h-full object-contain p-8 z-10"
-                                    />
+                                    <div className="w-full h-full p-8 z-10 flex items-center justify-center pointer-events-auto">
+                                        <ZoomableImage
+                                            src={current.imagePath || ''}
+                                            alt={current.name}
+                                            className="w-full h-full"
+                                        />
+                                    </div>
 
                                     {mode === 'MENTAL' && (
                                         <div className="absolute bottom-8 text-xs font-mono bg-blue-900/80 text-white px-4 py-1 border border-blue-500 animate-pulse z-20">
