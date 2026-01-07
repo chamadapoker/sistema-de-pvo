@@ -11,7 +11,7 @@ export function TrainingPage() {
 
     // Data State
     const [categories, setCategories] = useState<Category[]>([]);
-    const [equipments, setEquipments] = useState<Equipment[]>([]);
+    const [equipments, setEquipments] = useState<Equipment[] | null>([]); // Fixed type to allow null if needed, but array is safer
 
     // UI State
     const [loading, setLoading] = useState(true);
@@ -51,6 +51,7 @@ export function TrainingPage() {
                 setEquipments(equipment);
             } catch (error) {
                 console.error('Erro ao carregar', error);
+                setEquipments([]);
             } finally {
                 setLoadingEquipments(false);
             }
@@ -59,7 +60,7 @@ export function TrainingPage() {
     }, [selectedCategory]);
 
     // GROUPS LOGIC: Group equipments by name
-    const models = equipments.reduce((acc, item) => {
+    const models = (equipments || []).reduce((acc, item) => {
         const nameKey = item.name.trim().toUpperCase(); // Normalize
         if (!acc[nameKey]) {
             acc[nameKey] = [];
@@ -95,19 +96,19 @@ export function TrainingPage() {
     // Current Item in Gallery
     const currentViewItem = selectedModelGroup ? selectedModelGroup[galleryIndex] : null;
 
-    if (loading) return <div className="text-center p-10 font-mono text-blue-600 animate-pulse tracking-widest">INICIALIZANDO SISTEMA DE BATERIAS...</div>;
+    if (loading) return <div className="text-center p-10 font-mono text-red-600 animate-pulse tracking-widest">INICIALIZANDO SISTEMA DE BATERIAS...</div>;
 
     return (
         <DashboardLayout>
             <div className="space-y-8 min-h-screen pb-20">
                 {/* Header Section */}
-                <div className="flex items-center justify-between border-b border-blue-900/30 pb-4">
+                <div className="flex items-center justify-between border-b border-red-900/30 pb-4">
                     <div>
                         <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter drop-shadow-lg flex items-center gap-3">
-                            <span className="text-blue-600">BATERIAS</span>
+                            <span className="text-red-600">BATERIAS</span>
                             <span className="text-gray-600">//</span>
                             {selectedCategory ? (
-                                <span className="animate-fade-in">{categories.find(c => c.id === selectedCategory)?.name}</span>
+                                <span className="animate-fade-in text-white">{categories.find(c => c.id === selectedCategory)?.name}</span>
                             ) : (
                                 "IDENTIFICAÇÃO"
                             )}
@@ -122,7 +123,7 @@ export function TrainingPage() {
                                 setSelectedCategory(null);
                                 setSelectedModelGroup(null);
                             }}
-                            className="btn-gaming text-xs py-2 px-4 bg-[#1a1a1a] border border-[#333] hover:border-blue-600"
+                            className="btn-gaming text-xs py-2 px-4 bg-[#1a1a1a] border border-[#333] hover:border-red-600 transition-colors"
                         >
                             ← RETORNAR AO MENU
                         </button>
@@ -136,7 +137,7 @@ export function TrainingPage() {
                             <button
                                 key={cat.id}
                                 onClick={() => setSelectedCategory(cat.id)}
-                                className="group relative aspect-[3/4] overflow-hidden gaming-card bg-black border-2 border-transparent hover:border-blue-600 transition-all duration-300"
+                                className="group relative aspect-[3/4] overflow-hidden gaming-card bg-black border-2 border-transparent hover:border-red-600 transition-all duration-300"
                             >
                                 <img
                                     src={`${STORAGE_URL}/assets/categories/c${cat.id}.jpg`}
@@ -145,12 +146,12 @@ export function TrainingPage() {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-90 group-hover:opacity-60 transition-opacity"></div>
                                 <div className="absolute top-0 right-0 p-2">
-                                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                                    <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
                                 </div>
                                 <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
                                     <div className="text-4xl font-black italic text-white uppercase leading-none drop-shadow-md">{cat.name}</div>
-                                    <div className="flex justify-between items-center mt-2 border-t border-blue-600 pt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100">
-                                        <span className="text-xs font-bold text-blue-500 font-mono tracking-widest">{cat._count?.equipments || 0} REGS</span>
+                                    <div className="flex justify-between items-center mt-2 border-t border-red-600 pt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100">
+                                        <span className="text-xs font-bold text-red-500 font-mono tracking-widest">{cat._count?.equipments || 0} REGS</span>
                                         <span className="text-white">➜</span>
                                     </div>
                                 </div>
@@ -162,13 +163,13 @@ export function TrainingPage() {
                 {/* LEVEL 2: MODELS GRID */}
                 {selectedCategory && !selectedModelGroup && (
                     <div className="flex flex-col h-full animate-fade-in">
-                        <div className="bg-blue-900/10 border-l-4 border-blue-600 px-4 py-3 mb-6 flex justify-between items-center font-mono text-sm">
+                        <div className="bg-red-900/10 border-l-4 border-red-600 px-4 py-3 mb-6 flex justify-between items-center font-mono text-sm">
                             <div className="flex items-center gap-2 text-white">
-                                <span className="text-blue-500 font-bold">CATEGORIA:</span>
+                                <span className="text-red-500 font-bold">CATEGORIA:</span>
                                 {categories.find(c => c.id === selectedCategory)?.name.toUpperCase()}
                             </div>
                             <div className="text-gray-400">
-                                {Object.keys(models).length} MODELOS IDENTIFICADOS | {equipments.length} IMAGENS TOTAIS
+                                {Object.keys(models).length} MODELOS IDENTIFICADOS | {equipments?.length || 0} IMAGENS TOTAIS
                             </div>
                         </div>
 
@@ -186,7 +187,7 @@ export function TrainingPage() {
                                         <button
                                             key={modelName}
                                             onClick={() => handleSelectModel(modelName)}
-                                            className="group relative aspect-square bg-black border border-[#333] hover:border-blue-500 transition-all overflow-hidden gaming-card"
+                                            className="group relative aspect-square bg-black border border-[#333] hover:border-lime-500 transition-all overflow-hidden gaming-card"
                                         >
                                             <img
                                                 src={coverItem.imagePath || ''}
@@ -196,13 +197,13 @@ export function TrainingPage() {
                                             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90 group-hover:opacity-40 transition-opacity"></div>
 
                                             {/* Quantity Badge */}
-                                            <div className="absolute top-2 right-2 px-2 py-0.5 bg-blue-900/50 border border-blue-600 text-blue-300 text-[10px] font-mono font-bold rounded">
+                                            <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/80 border border-lime-600 text-lime-400 text-[10px] font-mono font-bold rounded">
                                                 {groupItems.length} IMGS
                                             </div>
 
                                             <div className="absolute bottom-0 left-0 w-full p-4">
-                                                <div className="text-blue-500 text-[10px] font-mono mb-1">{coverItem.code}</div>
-                                                <h4 className="font-black text-white text-lg italic uppercase leading-tight group-hover:text-blue-400 transition-colors">
+                                                <div className="text-lime-500 text-[10px] font-mono mb-1">{coverItem.code}</div>
+                                                <h4 className="font-black text-white text-lg italic uppercase leading-tight group-hover:text-lime-400 transition-colors">
                                                     {modelName}
                                                 </h4>
                                             </div>
@@ -218,12 +219,12 @@ export function TrainingPage() {
                 {selectedModelGroup && currentViewItem && (
                     <div className="modal-backdrop" onClick={() => setSelectedModelGroup(null)}>
                         <div
-                            className="modal-content max-w-[90vw] h-[90vh] bg-[#080808] border border-blue-900 shadow-[0_0_50px_rgba(37,99,235,0.2)] flex flex-col md:flex-row overflow-hidden relative animate-scale-in"
+                            className="modal-content max-w-[90vw] h-[90vh] bg-[#080808] border border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.2)] flex flex-col md:flex-row overflow-hidden relative animate-scale-in"
                             onClick={e => e.stopPropagation()}
                         >
                             {/* Decorative Tech Lines */}
-                            <div className="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-blue-600 z-50 pointer-events-none"></div>
-                            <div className="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-blue-600 z-50 pointer-events-none"></div>
+                            <div className="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-red-600 z-50 pointer-events-none"></div>
+                            <div className="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-red-600 z-50 pointer-events-none"></div>
 
                             {/* LEFT SIDE: VISUAL GALLERY */}
                             <div className="w-full md:w-3/4 bg-black relative group flex flex-col border-r border-[#333]">
@@ -241,13 +242,13 @@ export function TrainingPage() {
                                         <>
                                             <button
                                                 onClick={handlePrevImage}
-                                                className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-blue-600/80 text-white border border-gray-700 rounded-full transition-all z-40"
+                                                className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-lime-600/80 text-white border border-gray-700 hover:border-lime-500 rounded-full transition-all z-40"
                                             >
                                                 ←
                                             </button>
                                             <button
                                                 onClick={handleNextImage}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-blue-600/80 text-white border border-gray-700 rounded-full transition-all z-40"
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-lime-600/80 text-white border border-gray-700 hover:border-lime-500 rounded-full transition-all z-40"
                                             >
                                                 →
                                             </button>
@@ -255,7 +256,7 @@ export function TrainingPage() {
                                     )}
 
                                     {/* Image Counter Badge */}
-                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-black/70 border border-blue-900 rounded-full text-blue-400 font-mono text-xs z-40">
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-black/70 border border-lime-900 rounded-full text-lime-400 font-mono text-xs z-40">
                                         IMG {galleryIndex + 1} / {selectedModelGroup.length}
                                     </div>
                                 </div>
@@ -266,7 +267,7 @@ export function TrainingPage() {
                                         <button
                                             key={item.id}
                                             onClick={() => setGalleryIndex(idx)}
-                                            className={`relative aspect-video h-full flex-shrink-0 border-2 transition-all ${idx === galleryIndex ? 'border-blue-600 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'}`}
+                                            className={`relative aspect-video h-full flex-shrink-0 border-2 transition-all ${idx === galleryIndex ? 'border-lime-600 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'}`}
                                         >
                                             <img src={item.imagePath} className="w-full h-full object-cover" />
                                         </button>
@@ -280,9 +281,9 @@ export function TrainingPage() {
                                     <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none break-words">
                                         {currentViewItem.name}
                                     </h2>
-                                    <div className="text-blue-500 font-mono text-sm mt-3 flex flex-wrap gap-4">
+                                    <div className="text-lime-500 font-mono text-sm mt-3 flex flex-wrap gap-4">
                                         <span>COD: {currentViewItem.code || "N/A"}</span>
-                                        <span className="px-2 bg-blue-900/30 text-xs rounded border border-blue-900 flex items-center">
+                                        <span className="px-2 bg-lime-900/20 text-xs rounded border border-lime-900/50 flex items-center">
                                             {selectedModelGroup.length} VARIAÇÕES DE IMAGEM
                                         </span>
                                     </div>
@@ -290,7 +291,7 @@ export function TrainingPage() {
 
                                 <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#0a0a0a]">
                                     <h3 className="text-gray-500 font-bold uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                        <div className="w-2 h-2 bg-lime-500 rounded-full"></div>
                                         Ficha Técnica (Intelligence)
                                     </h3>
                                     <div className="prose prose-invert prose-sm font-mono text-gray-300 leading-relaxed text-left whitespace-pre-wrap">
