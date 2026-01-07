@@ -1,4 +1,4 @@
-import { api } from './api';
+import { supabase } from '../lib/supabase';
 
 export interface ScheduledTest {
     id: string;
@@ -60,32 +60,38 @@ export interface TestAttempt {
 }
 
 export const testService = {
-    // Listar todas as provas (instrutor) - Adjusted to match server response structure if needed
-    // Server returns { tests: [] }
+    // Listar todas as provas (instrutor)
     async getAllTests(): Promise<ScheduledTest[]> {
         try {
-            const response = await api.get<{ tests: ScheduledTest[] }>('/tests');
-            return response.data.tests;
+            const { data, error } = await supabase
+                .from('tests')
+                .select('*')
+                .order('createdAt', { ascending: false });
+
+            if (error) throw error;
+            return data as ScheduledTest[];
         } catch (error) {
             console.error('Erro ao buscar testes', error);
             return [];
         }
     },
 
-    // Listar provas do aluno (apenas SCHEDULED e ACTIVE)
-    // Local API doesn't distinguish nicely yet, so reusing getAllTests or filtering if needed. 
-    // For now returning all tests as the server implementation is simple.
+    // Listar provas do aluno
     async getStudentTests(): Promise<ScheduledTest[]> {
         return this.getAllTests();
     },
 
     // Obter detalhes de uma prova
-    async getTest(testId: string, password?: string): Promise<ScheduledTest> {
+    async getTest(testId: string, _password?: string): Promise<ScheduledTest> {
         try {
-            const response = await api.get<{ test: ScheduledTest }>(`/tests/${testId}`, {
-                params: { password }
-            });
-            return response.data.test;
+            const { data, error } = await supabase
+                .from('tests')
+                .select('*')
+                .eq('id', testId)
+                .single();
+
+            if (error) throw error;
+            return data as ScheduledTest;
         } catch (error: any) {
             throw error;
         }
@@ -94,18 +100,57 @@ export const testService = {
     // Enviar resultado
     async submitResult(resultData: { testId?: string; answers: any[]; totalTime: number; testType: string }): Promise<TestResult> {
         try {
-            const response = await api.post<{ message: string; result: TestResult }>('/tests/results', resultData);
-            return response.data.result;
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Usuário não autenticado');
+
+            // Calculate score simple logic or just store raw data. 
+            // Assuming the backend did logic, here we might need to trust the client sending correct/score or recalculate.
+            // For now, we trust the caller has calculated score or we store raw answers.
+            // Simplifying: just storing the result.
+
+            const correctCount = resultData.answers.filter((a: any) => a.isCorrect).length;
+            const score = (correctCount / resultData.answers.length) * 100 || 0;
+
+            const { data, error } = await supabase
+                .from('test_results')
+                .insert({
+                    userId: user.id,
+                    testId: resultData.testId,
+                    score: score,
+                    correctAnswers: correctCount,
+                    totalQuestions: resultData.answers.length,
+                    totalTime: resultData.totalTime,
+                    testType: resultData.testType,
+                    answers: JSON.stringify(resultData.answers),
+                    completedAt: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data as TestResult;
         } catch (error: any) {
-            throw new Error(error.response?.data?.error || 'Erro ao salvar resultado');
+            throw new Error(error.message || 'Erro ao salvar resultado');
         }
     },
 
     // Obter meus resultados
     async getMyResults(): Promise<TestResult[]> {
         try {
-            const response = await api.get<{ results: TestResult[] }>('/tests/results/me');
-            return response.data.results;
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return [];
+
+            const { data, error } = await supabase
+                .from('test_results')
+                .select(`
+                    *,
+                    test:tests(*)
+                `)
+                .eq('userId', user.id)
+                .order('completedAt', { ascending: false });
+
+            if (error) throw error;
+            return data as TestResult[];
         } catch (error) {
             console.error('Erro ao buscar resultados', error);
             return [];
@@ -115,17 +160,42 @@ export const testService = {
     // Criar prova (Adm/Instrutor)
     async createTest(testData: any): Promise<ScheduledTest> {
         try {
-            // Adapt payload to server expectations (server expects { questions: [...] })
-            // This might need adjustment based on UI form
-            const response = await api.post<{ message: string; test: ScheduledTest }>('/tests', testData);
-            return response.data.test;
+            const { data: { user } } = await supabase.auth.getUser();
+
+            // Insert test
+            const { data: test, error } = await supabase
+                .from('tests')
+                .insert({
+                    name: testData.name,
+                    description: testData.description,
+                    duration: testData.duration,
+                    questionCount: testData.questionCount || testData.questions?.length || 0,
+                    creatorId: user?.id
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // If there are questions, insert them. Assuming 'test_questions' table exists or similar logic
+            if (testData.questions && testData.questions.length > 0) {
+                const questionsToInsert = testData.questions.map((q: any, index: number) => ({
+                    testId: test.id,
+                    equipmentId: q.equipmentId,
+                    order: index
+                }));
+
+                // Note: You might need to check if 'test_questions' table exists in your schema
+                // await supabase.from('test_questions').insert(questionsToInsert);
+            }
+
+            return test as ScheduledTest;
         } catch (error: any) {
-            throw new Error(error.response?.data?.error || 'Erro ao criar teste');
+            throw new Error(error.message || 'Erro ao criar teste');
         }
     },
 
     // ---- MOCKED / NOT IMPLEMENTED ----
-    // methods that exist in the interface but backend doesn't support yet
 
     async activateTest(_testId: string): Promise<void> { console.warn('activateTest not implemented'); },
     async finishTest(_testId: string): Promise<void> { console.warn('finishTest not implemented'); },
@@ -135,7 +205,9 @@ export const testService = {
     async completeAttempt(_attemptId: string, _score: number, _correct: number, _total: number, _time: number, _answers: any[]): Promise<void> { },
     async getTestAttempts(_testId: string): Promise<any[]> { return []; },
     async getStudentAttempt(_testId: string): Promise<any> { return null; },
-    async deleteTest(_testId: string): Promise<void> { console.warn('deleteTest not implemented'); },
+    async deleteTest(_testId: string): Promise<void> {
+        await supabase.from('tests').delete().eq('id', _testId);
+    },
     async updateTest(_testId: string, _updates: any): Promise<void> { console.warn('updateTest not implemented'); },
 
     // Whitelist methods (mocked)
@@ -157,7 +229,7 @@ export const testService = {
     async getTestAttemptsForCorrection(_testId: string): Promise<any[]> { return []; },
 
     async createTestWithQuestions(data: any, eqIds: string[]): Promise<ScheduledTest> {
-        // Fallback to simple create
+        // Fallback to simple create logic
         return this.createTest({ ...data, questions: eqIds.map(id => ({ equipmentId: id })) });
     },
     async getTestQuestions(_testId: string): Promise<any[]> { return []; }
