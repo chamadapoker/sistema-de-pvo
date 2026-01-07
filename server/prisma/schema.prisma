@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Usuário
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("STUDENT") // STUDENT, INSTRUCTOR, ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  testResults TestResult[]
+  createdTests StandardTest[]
+}
+
+// Categorias de Equipamentos
+model Category {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  description String?
+  order       Int         @unique
+
+  // Relações
+  equipments  Equipment[]
+}
+
+// Equipamentos Militares
+model Equipment {
+  id          String   @id @default(uuid())
+  code        String   @unique // Ex: 1P00101
+  name        String
+  description String?
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+
+  // Informações da imagem
+  imagePath   String
+  thumbnailPath String?
+
+  // Metadados
+  country     String?  // País de origem
+  manufacturer String? // Fabricante
+  year        Int?     // Ano de introdução
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  testQuestions TestQuestion[]
+}
+
+// Testes Padrão (criados por instrutores)
+model StandardTest {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  password    String?  // Hash da senha para proteger o teste
+
+  // Configurações do teste
+  duration    Int      // Duração em segundos
+  questionCount Int    // Número de questões
+
+  creator     User     @relation(fields: [creatorId], references: [id])
+  creatorId   String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relações
+  questions   TestQuestion[]
+  results     TestResult[]
+}
+
+// Questões do Teste
+model TestQuestion {
+  id            String       @id @default(uuid())
+  test          StandardTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+  testId        String
+
+  equipment     Equipment    @relation(fields: [equipmentId], references: [id])
+  equipmentId   String
+
+  order         Int          // Ordem da questão no teste
+  displayTime   Int          // Tempo de exibição em segundos
+
+  createdAt     DateTime     @default(now())
+
+  @@unique([testId, order])
+}
+
+// Resultados dos Testes
+model TestResult {
+  id          String   @id @default(uuid())
+
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+
+  test        StandardTest? @relation(fields: [testId], references: [id])
+  testId      String?
+
+  // Dados do resultado
+  score       Float    // Pontuação (0-100)
+  correctAnswers Int
+  totalQuestions Int
+  totalTime   Int      // Tempo total em segundos
+
+  // Tipo de teste
+  testType    String   @default("FREE") // FREE, STANDARD, TRAINING
+
+  // Detalhes das respostas
+  answers     String   // JSON string de respostas detalhadas
+
+  completedAt DateTime @default(now())
+}
+
+// Presets de Seleção (combinações salvas de equipamentos)
+model SelectionPreset {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  equipmentIds String  // JSON string de IDs de equipamentos
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

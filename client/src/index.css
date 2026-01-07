@@ -1,0 +1,180 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-[#050505] text-[#E5E5E5] font-sans antialiased overflow-x-hidden;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #000;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #b91c1c;
+    border-radius: 0;
+    /* Square for sci-fi look */
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* --- GAMING UI KIT --- */
+
+  /* Sci-Fi Cut Corners Card */
+  .gaming-card {
+    @apply relative bg-[#121212] border-0 overflow-hidden transition-all duration-300;
+    clip-path: polygon(20px 0, 100% 0,
+        100% calc(100% - 20px), calc(100% - 20px) 100%,
+        0 100%, 0 20px);
+  }
+
+  .gaming-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid #333;
+    /* Replicate clip-path for border effect visually if needed, but inset border is easier */
+    pointer-events: none;
+    z-index: 20;
+    transition: border-color 0.3s;
+  }
+
+  .gaming-card:hover::before {
+    border-color: #ef4444;
+    box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.2);
+  }
+
+  /* Button with tech look */
+  .btn-gaming {
+    @apply relative bg-red-700 text-white font-black uppercase tracking-widest px-8 py-3 transition-all hover:bg-red-600 active:scale-95 text-sm;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  }
+
+  .btn-gaming::after {
+    content: '';
+    @apply absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity;
+  }
+
+  /* Text Glow */
+  .text-neon {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  /* Input Gaming */
+  .input-gaming {
+    @apply bg-black/50 border border-gray-700 text-white p-4 font-mono w-full focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+  }
+
+  /* Sidebar Active State Tech */
+  .sidebar-link-tech {
+    @apply relative px-4 py-3 flex items-center gap-3 text-gray-500 transition-all hover:text-white;
+  }
+
+  .sidebar-link-tech.active {
+    @apply text-red-500 bg-red-900/10 border-r-2 border-red-500;
+  }
+
+  .sidebar-link-tech.active::before {
+    content: '';
+    @apply absolute left-0 top-0 bottom-0 w-1 bg-red-500 blur-[2px];
+  }
+
+  /* Modal Backdrop - Fixed and Centered */
+  .modal-backdrop {
+    @apply fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  .modal-content {
+    @apply relative bg-[#121212] border border-[#333] rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl;
+    animation: scaleIn 0.2s ease-out;
+  }
+}
+
+/* Animations */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scan {
+  animation: scan 4s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+
+/* 3D Flip Card */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+}
