@@ -78,7 +78,6 @@ export function TestManagement() {
             }
         }
     };
-
     const handleFinish = async (testId: string) => {
         if (confirm('Encerrar esta prova? Todas as tentativas em andamento serão finalizadas.')) {
             try {
@@ -113,10 +112,10 @@ export function TestManagement() {
         });
     };
 
-    const getStatusBadge = (_test: any) => {
-        // Mocked status logic
-        const status = 'SCHEDULED'; // Default for now
-        switch (status as string) {
+    const getStatusBadge = (test: ScheduledTest) => {
+        // Use real status from DB, fallback to SCHEDULED
+        const status = (test as any).status || 'SCHEDULED';
+        switch (status) {
             case 'SCHEDULED':
                 return <span className="px-3 py-1 bg-blue-900/20 text-blue-500 border border-blue-900 text-xs font-mono uppercase">Agendada</span>;
             case 'ACTIVE':
@@ -334,7 +333,7 @@ export function TestManagement() {
                                             </div>
                                             <div>
                                                 <span className="text-gray-500 uppercase block">Local</span>
-                                                <span className="text-white">{'Sala padrão'}</span>
+                                                <span className="text-white">{test.location || 'Sala padrão'}</span>
                                             </div>
                                             <div>
                                                 <span className="text-gray-500 uppercase block">Questões</span>
@@ -342,7 +341,7 @@ export function TestManagement() {
                                             </div>
                                             <div>
                                                 <span className="text-gray-500 uppercase block">Tempo/Q</span>
-                                                <span className="text-white">{Math.round(test.duration / test.questionCount)}m</span>
+                                                <span className="text-white">{test.duration ? Math.round(test.duration / (test.questionCount || 1)) : 0}m</span>
                                             </div>
                                         </div>
                                     </div>

@@ -147,16 +147,23 @@ export function EquipmentManagement() {
     const handleCreateCategory = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            // Mock implementation since createCategory might not exist in service yet
-            // Assuming it exists or I should add it.
-            // checking service... createCategory DOES NOT EXIST in previously viewed service.
-            // I'll assume for now I can't distinctively create categories without backend support or ignoring it.
-            // Ah, the user REQUESTED "create categories". I need to allow it.
-            // For now, I'll alert.
-            alert('Funcionalidade de criar categoria requer atualização no backend (Tabela Categories).');
-            // In a real app I would add the service method.
-        } catch (error) {
-            alert('Erro ao criar categoria');
+            if (!newCategoryName.trim()) return;
+            await equipmentService.createCategory(newCategoryName);
+            setNewCategoryName('');
+            loadData();
+        } catch (error: any) {
+            alert('Erro ao criar categoria: ' + error.message);
+        }
+    };
+
+    const handleDeleteCategory = async (id: number) => {
+        if (confirm('Tem certeza que deseja excluir esta categoria? Equipamentos vinculados ficarão sem categoria.')) {
+            try {
+                await equipmentService.deleteCategory(id);
+                loadData();
+            } catch (error: any) {
+                alert('Erro ao excluir categoria: ' + error.message);
+            }
         }
     };
 
@@ -181,14 +188,12 @@ export function EquipmentManagement() {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        {/* 
-                        <button 
+                        <button
                             onClick={() => setIsCategoryModalOpen(true)}
                             className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-yellow-600 text-xs"
                         >
                             Gerenciar Categorias
                         </button>
-                        */}
                         <button
                             onClick={() => handleOpenModal()}
                             className="btn-gaming bg-red-700 hover:bg-red-600 border-red-500"
@@ -252,6 +257,48 @@ export function EquipmentManagement() {
                         ))
                     )}
                 </div>
+
+                {/* CATEGORY MANAGEMENT MODAL */}
+                {isCategoryModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="bg-[#0f0f0f] border-2 border-yellow-600 w-full max-w-md p-6 shadow-2xl">
+                            <div className="flex justify-between items-center border-b border-yellow-900/30 pb-4 mb-4">
+                                <h2 className="text-xl font-black italic text-white uppercase text-yellow-500">Gerenciar Categorias</h2>
+                                <button onClick={() => setIsCategoryModalOpen(false)} className="text-gray-500 hover:text-white">✕</button>
+                            </div>
+
+                            {/* Create Form */}
+                            <form onSubmit={handleCreateCategory} className="mb-6 flex gap-2">
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="Nova Categoria..."
+                                    className="flex-1 bg-[#0a0a0a] border border-[#333] p-2 text-white text-sm focus:border-yellow-600 outline-none"
+                                    value={newCategoryName}
+                                    onChange={e => setNewCategoryName(e.target.value)}
+                                />
+                                <button type="submit" className="bg-yellow-800 hover:bg-yellow-700 text-white px-4 text-xs font-bold uppercase transition-colors">CRIAR</button>
+                            </form>
+
+                            {/* List */}
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                                {categories.map(cat => (
+                                    <div key={cat.id} className="flex items-center justify-between bg-[#0a0a0a] p-3 border border-[#222] hover:border-yellow-900/50 transition-colors">
+                                        <span className="text-sm text-gray-300 font-mono uppercase">{cat.name}</span>
+                                        <button
+                                            onClick={() => handleDeleteCategory(cat.id)}
+                                            className="text-red-900 hover:text-red-500 text-[10px] font-bold uppercase tracking-wider"
+                                            title="Excluir Categoria"
+                                        >
+                                            REMOVER
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
 
                 {/* EDIT/CREATE MODAL */}
                 {isModalOpen && (
