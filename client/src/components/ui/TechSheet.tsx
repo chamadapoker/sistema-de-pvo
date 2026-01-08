@@ -72,7 +72,7 @@ export function TechSheet({ markdown, className = '' }: TechSheetProps) {
         return (
             <div className={`text-center p-8 border border-dashed border-[#333] rounded ${className}`}>
                 <p className="text-gray-600 font-mono text-xs uppercase">
-                    >> DADOS TÉCNICOS INDISPONÍVEIS
+                    {'>>'} DADOS TÉCNICOS INDISPONÍVEIS
                 </p>
                 <p className="text-gray-700 text-[10px] mt-2 max-w-[200px] mx-auto">
                     Solicite ao comando a atualização do banco de dados (Run SQL Script).
