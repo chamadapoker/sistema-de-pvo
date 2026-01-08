@@ -36,11 +36,13 @@ export const userService = {
         if (!supabaseUrl || !supabaseAnonKey) throw new Error("Supabase not configured");
 
         // Create a temporary client to avoid logging out the admin
+        // Use a unique storage key to ensure complete isolation from the admin's session
         const tempClient = createClient(supabaseUrl, supabaseAnonKey, {
             auth: {
                 persistSession: false,
                 autoRefreshToken: false,
-                detectSessionInUrl: false
+                detectSessionInUrl: false,
+                storageKey: `temp_signup_${Date.now()}_${Math.random()}`
             }
         });
 
@@ -57,26 +59,17 @@ export const userService = {
 
         if (error) throw error;
 
-        // Wait a small moment for trigger to propagate if needed, though usually instant
-        // The trigger on auth.users will handle the insert into public.users
+        // Check for existing user (Supabase fake success for existing emails)
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+            throw new Error("Este email já está registrado no sistema.");
+        }
+
+        if (!data.user) {
+            throw new Error("Erro desconhecido ao criar usuário (sem dados retornados).");
+        }
     },
 
     async deleteUser(userId: string): Promise<void> {
-        // Deleting from public.users doesn't delete from auth.users easily without Service Key
-        // But we can delete from public.users if RLS allows.
-        // HOWEVER, deleting from public.users DOES NOT delete from auth.users automatically unless we have a trigger.
-        // AND public.users is referencing auth.users(id) ON DELETE CASCADE, meaning we must delete AUTH user to delete PUBLIC user.
-        // We CANNOT delete auth user from Client side without Service Key.
-        // We can only use RPC if we set "SECURITY DEFINER" on a function that calls admin API? No, PLPGSQL can't call admin API.
-        // WE CAN use an RPC that does "DELETE FROM auth.users WHERE id = ..." if the Postgres Role has permissions.
-        // By default, the postgres role for RLS/RPC is 'postgres' or 'service_role' ONLY if configured.
-        // Usually, `auth.users` is protected.
-
-        // For now, let's implement a 'soft delete' or just try to delete and see if it fails.
-        // Actually, the user didn't ask for delete, he asked for ADD.
-        // I'll leave delete out or mocked for now unless I'm sure I can do it.
-        // The previous file didn't have delete, so I won't add it to avoid breaking things.
-
         throw new Error("Exclusão de usuário requer acesso direto ao painel do Supabase");
     }
 };
