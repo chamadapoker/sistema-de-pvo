@@ -27,6 +27,35 @@ export interface TestResult {
     test?: any;
 }
 
+export interface TestAttempt {
+    id: string;
+    test_id: string;
+    user_id: string;
+    started_at: string;
+    finished_at?: string;
+    status: 'IN_PROGRESS' | 'COMPLETED';
+    score?: number;
+}
+
+export interface StudentAnswer {
+    id: string;
+    attempt_id: string;
+    question_id: string;
+    answer_text: string;
+    is_correct?: boolean;
+    points_earned?: number;
+    instructor_feedback?: string;
+    question?: any;
+}
+
+export interface TestQuestion {
+    id: string;
+    test_id: string;
+    equipment_id: string;
+    question_order: number;
+    points: number;
+}
+
 export const testService = {
     // Listar todas as provas (instrutor)
     async getAllTests(): Promise<ScheduledTest[]> {
@@ -74,7 +103,7 @@ export const testService = {
         }
     },
 
-    // Enviar resultado
+    // Enviar resultado (Modo antigo/compatibilidade)
     async submitResult(resultData: { testId?: string; answers: any[]; totalTime: number; testType: string }): Promise<TestResult> {
         try {
             const { data: { user } } = await supabase.auth.getUser();
@@ -103,7 +132,6 @@ export const testService = {
 
             if (error) throw error;
 
-            // Map back to camelCase for return
             const mapped = {
                 ...data,
                 userId: data.user_id,
@@ -127,6 +155,34 @@ export const testService = {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return [];
 
+            // Fetch from test_attempts (new system)
+            const { data: attempts, error: attError } = await supabase
+                .from('test_attempts')
+                .select(`
+                    *,
+                    test:tests(*)
+                `)
+                .eq('user_id', user.id)
+                .eq('status', 'COMPLETED')
+                .order('finished_at', { ascending: false });
+
+            if (!attError && attempts && attempts.length > 0) {
+                return attempts.map((a: any) => ({
+                    id: a.id,
+                    userId: a.user_id,
+                    testId: a.test_id,
+                    score: a.score || 0,
+                    correctAnswers: 0, // Need to count from answers if needed
+                    totalQuestions: 0,
+                    totalTime: 0,
+                    testType: 'WRITTEN',
+                    answers: '',
+                    completedAt: a.finished_at,
+                    test: a.test
+                }));
+            }
+
+            // Fallback to old test_results
             const { data, error } = await supabase
                 .from('test_results')
                 .select(`
@@ -138,7 +194,6 @@ export const testService = {
 
             if (error) throw error;
 
-            // Map
             return data.map((item: any) => ({
                 ...item,
                 userId: item.user_id,
@@ -160,7 +215,6 @@ export const testService = {
         try {
             const { data: { user } } = await supabase.auth.getUser();
 
-            // Insert test
             const { data: test, error } = await supabase
                 .from('tests')
                 .insert({
@@ -202,8 +256,6 @@ export const testService = {
         return this.createTest({ ...data, questions: eqIds });
     },
 
-    // ---- IMPLEMENTED METHODS ----
-
     async deleteTest(testId: string): Promise<void> {
         const { error } = await supabase.from('tests').delete().eq('id', testId);
         if (error) throw error;
@@ -234,40 +286,37 @@ export const testService = {
     },
 
     async getTestAttempts(testId: string): Promise<any[]> {
-        // Try to join with public.users or fall back
-        // Since we don't have FK setup to public.users on test_results (user_id is just UUID), join might fail.
-        // We will fetch results and then try to fetch public.users if needed.
-        // Or assume user_id is enough for now, or use auth.users if possible (but we can't select email easily).
-
-        // Let's try to select just * first.
         const { data, error } = await supabase
-            .from('test_results')
-            .select(`*`)
+            .from('test_attempts')
+            .select(`
+                *,
+                user:users!user_id(email)
+            `)
             .eq('test_id', testId)
             .order('score', { ascending: false });
 
-        if (error) throw error;
+        if (error && error.code !== 'PGRST116') {
+            // Fallback if users table relation issue
+            const { data: fallback } = await supabase
+                .from('test_attempts')
+                .select('*')
+                .eq('test_id', testId);
 
-        // Populate minimal user info (email) manually if needed, 
-        // OR rely on the fact that we might have set up a view or something.
-        // For this Demo, we might just show User ID if join fails, or use Client side fetch.
-        // Actually, let's try to map it if we can.
+            return fallback?.map((r: any) => ({ ...r, completedAt: r.finished_at })) || [];
+        }
 
-        return data.map((r: any) => ({
+        return data?.map((r: any) => ({
             ...r,
-            completedAt: r.completed_at,
-            correctAnswers: r.correct_answers,
-            totalQuestions: r.total_questions,
-            // Mock user object so UI doesn't crash
-            user: { email: 'ID: ' + r.user_id.substring(0, 8) + '...' }
-        }));
+            completedAt: r.finished_at,
+            user: { email: r.user?.email || 'Aluno' }
+        })) || [];
     },
 
     async getTestStatistics(testId: string): Promise<any> {
-        const { data } = await supabase.from('test_results').select('score').eq('test_id', testId);
+        const { data } = await supabase.from('test_attempts').select('score').eq('test_id', testId).eq('status', 'COMPLETED');
         if (!data || data.length === 0) return { average: 0, count: 0, max: 0, min: 0 };
 
-        const scores = data.map(d => d.score);
+        const scores = data.map(d => d.score || 0);
         return {
             count: scores.length,
             average: scores.reduce((a, b) => a + b, 0) / scores.length,
@@ -276,32 +325,153 @@ export const testService = {
         };
     },
 
-    async getTestQuestions(testId: string): Promise<any[]> {
-        const { data } = await supabase.from('test_questions').select('*').eq('test_id', testId);
+    async getTestQuestions(testId: string): Promise<TestQuestion[]> {
+        const { data } = await supabase.from('test_questions').select('*').eq('test_id', testId).order('question_order');
         return data || [];
     },
 
-    // ---- MOCKED / COMPLICATED CORRECTION LOGIC ----
+    // ---- REAL IMPLEMENTATIONS FOR CORRECTION WORKFLOW ----
 
-    // These require a 'student_answers' table or complex JSON parsing.
-    // Leaving as mocks for now to ensure stability of current working features.
+    async getTestsNeedingCorrection(): Promise<any[]> {
+        const { data: tests, error } = await supabase
+            .from('tests')
+            .select('id, name, created_at')
+            .eq('status', 'ACTIVE');
 
-    async getTestsNeedingCorrection(): Promise<any[]> { return []; },
-    async getAttemptForCorrection(_attemptId: string): Promise<any> { return { attempt: {}, answers: [] }; },
-    async getTestAttemptsForCorrection(_testId: string): Promise<any[]> { return []; },
-    async createAttempt(_testId: string): Promise<any> { return {}; },
-    async updateAttempt(_attemptId: string, _updates: any): Promise<void> { },
-    async completeAttempt(_attemptId: string, _score: number, _correct: number, _total: number, _time: number, _answers: any[]): Promise<void> { },
-    async getStudentAttempt(_testId: string): Promise<any> { return null; },
-    async getStudentsWhoMissedTest(_testId: string): Promise<any[]> { return []; },
-    async addStudentToTest(_testId: string, _studentId: string): Promise<void> { },
-    async addMultipleStudentsToTest(_testId: string, _ids: string[]): Promise<void> { },
-    async addMissingStudentsAutomatic(_oldId: string, _newId: string): Promise<number> { return 0; },
-    async removeStudentFromTest(_testId: string, _studentId: string): Promise<void> { },
-    async getTestAllowedStudents(_testId: string): Promise<any[]> { return []; },
-    async canStudentTakeTest(_testId: string): Promise<boolean> { return true; },
-    async saveStudentAnswer(_attemptId: string, _qId: string, _text: string, _time?: number): Promise<void> { },
-    async getStudentAnswers(_attemptId: string): Promise<any[]> { return []; },
-    async correctAnswer(_ansId: string, _correct: boolean, _points: number, _feedback?: string): Promise<void> { },
-    async calculateWrittenTestScore(_attemptId: string): Promise<void> { }
+        if (error) throw error;
+
+        const results = await Promise.all(tests.map(async (test: any) => {
+            const { data: attempts } = await supabase
+                .from('test_attempts')
+                .select('id')
+                .eq('test_id', test.id)
+                .in('status', ['COMPLETED']);
+
+            if (!attempts || attempts.length === 0) return null;
+
+            const attemptIds = attempts.map(a => a.id);
+            if (attemptIds.length === 0) return null;
+
+            const { count: uncorrectedCount } = await supabase
+                .from('student_answers')
+                .select('id', { count: 'exact', head: true })
+                .in('attempt_id', attemptIds)
+                .is('is_correct', null);
+
+            if (uncorrectedCount && uncorrectedCount > 0) {
+                return {
+                    test_id: test.id,
+                    test_title: test.name,
+                    uncorrected_count: uncorrectedCount,
+                    created_at: test.created_at
+                };
+            }
+            return null;
+        }));
+
+        return results.filter(r => r !== null);
+    },
+
+    async getAttemptForCorrection(attemptId: string): Promise<any> {
+        const { data: attempt, error } = await supabase
+            .from('test_attempts')
+            .select(`
+                *,
+                student:users!user_id(email, raw_user_meta_data)
+            `)
+            .eq('id', attemptId)
+            .single();
+
+        if (error) throw error;
+
+        const { data: answers, error: ansError } = await supabase
+            .from('student_answers')
+            .select(`
+                *,
+                question:test_questions(*)
+            `)
+            .eq('attempt_id', attemptId)
+            .order('created_at', { ascending: true });
+
+        if (ansError) throw ansError;
+
+        return {
+            ...attempt,
+            answers: answers
+        };
+    },
+
+    async getTestAttemptsForCorrection(testId: string): Promise<any[]> {
+        const { data, error } = await supabase
+            .from('test_attempts')
+            .select(`
+                *,
+                student:users!user_id(email, raw_user_meta_data)
+            `)
+            .eq('test_id', testId)
+            .order('finished_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+    },
+
+    async createAttempt(testId: string): Promise<any> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not authenticated");
+
+        const { data, error } = await supabase
+            .from('test_attempts')
+            .insert({
+                test_id: testId,
+                user_id: user.id,
+                status: 'IN_PROGRESS'
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async updateAttempt(attemptId: string, updates: any): Promise<void> {
+        const { error } = await supabase
+            .from('test_attempts')
+            .update(updates)
+            .eq('id', attemptId);
+        if (error) throw error;
+    },
+
+    async saveStudentAnswer(attemptId: string, qId: string, text: string, time?: number): Promise<void> {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not authenticated");
+
+        const { error } = await supabase
+            .from('student_answers')
+            .upsert({
+                attempt_id: attemptId,
+                question_id: qId,
+                answer_text: text,
+                time_spent_seconds: time
+            }, { onConflict: 'attempt_id, question_id' });
+
+        if (error) throw error;
+    },
+
+    async correctAnswer(answerId: string, isCorrect: boolean, points: number, feedback?: string): Promise<void> {
+        const { error } = await supabase
+            .from('student_answers')
+            .update({
+                is_correct: isCorrect,
+                points_earned: points,
+                instructor_feedback: feedback
+            })
+            .eq('id', answerId);
+
+        if (error) throw error;
+    },
+
+    async calculateWrittenTestScore(attemptId: string): Promise<void> {
+        const { error } = await supabase.rpc('calculate_attempt_score', { attempt_uuid: attemptId });
+        if (error) throw error;
+    }
 };
