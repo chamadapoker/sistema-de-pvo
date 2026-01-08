@@ -67,7 +67,6 @@ export function TestManagement() {
         }
     };
 
-    /*
     const handleActivate = async (testId: string) => {
         if (confirm('Liberar esta prova para os alunos?')) {
             try {
@@ -78,6 +77,7 @@ export function TestManagement() {
             }
         }
     };
+
     const handleFinish = async (testId: string) => {
         if (confirm('Encerrar esta prova? Todas as tentativas em andamento serão finalizadas.')) {
             try {
@@ -88,7 +88,6 @@ export function TestManagement() {
             }
         }
     };
-    */
 
     const handleDelete = async (testId: string) => {
         if (confirm('Tem certeza que deseja deletar esta prova?')) {
@@ -315,47 +314,73 @@ export function TestManagement() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {tests.map(test => (
-                            <div key={test.id} className="gaming-card bg-[#0a0a0a] border border-[#333] hover:border-green-600 p-6 transition-all">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-xl font-black italic text-white">{test.name}</h3>
-                                            {getStatusBadge(test)}
+                        {tests.map(test => {
+                            const status = (test as any).status || 'SCHEDULED';
+                            return (
+                                <div key={test.id} className="gaming-card bg-[#0a0a0a] border border-[#333] hover:border-green-600 p-6 transition-all">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <h3 className="text-xl font-black italic text-white">{test.name}</h3>
+                                                {getStatusBadge(test)}
+                                            </div>
+                                            {test.description && (
+                                                <p className="text-sm text-gray-400 mb-4">{test.description}</p>
+                                            )}
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                                                <div>
+                                                    <span className="text-gray-500 uppercase block">Data/Hora</span>
+                                                    <span className="text-white">{formatDate(test.createdAt || new Date().toISOString())}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500 uppercase block">Local</span>
+                                                    <span className="text-white">{test.location || 'Sala padrão'}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500 uppercase block">Questões</span>
+                                                    <span className="text-white">{test.questionCount}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500 uppercase block">Tempo/Q</span>
+                                                    <span className="text-white">{test.duration ? Math.round(test.duration / (test.questionCount || 1)) : 0}m</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        {test.description && (
-                                            <p className="text-sm text-gray-400 mb-4">{test.description}</p>
-                                        )}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
-                                            <div>
-                                                <span className="text-gray-500 uppercase block">Data/Hora</span>
-                                                <span className="text-white">{formatDate(test.createdAt || new Date().toISOString())}</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500 uppercase block">Local</span>
-                                                <span className="text-white">{test.location || 'Sala padrão'}</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500 uppercase block">Questões</span>
-                                                <span className="text-white">{test.questionCount}</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-gray-500 uppercase block">Tempo/Q</span>
-                                                <span className="text-white">{test.duration ? Math.round(test.duration / (test.questionCount || 1)) : 0}m</span>
-                                            </div>
+                                        <div className="flex gap-2 ml-4 self-center">
+                                            {status === 'SCHEDULED' && (
+                                                <button
+                                                    onClick={() => handleActivate(test.id)}
+                                                    className="btn-gaming bg-blue-900/30 text-blue-500 border-blue-800 hover:bg-blue-900/50 hover:text-white text-xs py-2 px-4"
+                                                >
+                                                    LIBERAR
+                                                </button>
+                                            )}
+                                            {status === 'ACTIVE' && (
+                                                <button
+                                                    onClick={() => handleFinish(test.id)}
+                                                    className="btn-gaming bg-yellow-900/30 text-yellow-500 border-yellow-800 hover:bg-yellow-900/50 hover:text-white text-xs py-2 px-4"
+                                                >
+                                                    ENCERRAR
+                                                </button>
+                                            )}
+                                            {status === 'FINISHED' && (
+                                                <button disabled className="btn-gaming opacity-50 cursor-not-allowed bg-[#111] text-gray-500 border-[#333] text-xs py-2 px-4">
+                                                    CONCLUÍDA
+                                                </button>
+                                            )}
+
+                                            <button
+                                                onClick={() => handleDelete(test.id)}
+                                                className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-red-600 text-xs py-2 px-4"
+                                                title="Excluir Prova"
+                                            >
+                                                ✕
+                                            </button>
                                         </div>
-                                    </div>
-                                    <div className="flex gap-2 ml-4">
-                                        <button
-                                            onClick={() => handleDelete(test.id)}
-                                            className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-red-600 text-xs py-2 px-4"
-                                        >
-                                            DELETAR
-                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
