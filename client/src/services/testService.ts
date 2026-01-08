@@ -27,38 +27,6 @@ export interface TestResult {
     test?: any;
 }
 
-export interface StudentAnswer {
-    question_id: string;
-    answer_text: string;
-    score?: number;
-    feedback?: string;
-    time_spent_seconds?: number;
-    is_correct?: boolean;
-}
-
-export interface TestQuestion {
-    id: string;
-    test_id: string;
-    equipment_id: string; // UUID
-    question_number: number;
-    question_text?: string;
-    options?: any;
-    correct_answer_id?: number;
-    points: number;
-    created_at: string;
-}
-
-export interface TestAttempt {
-    id: string;
-    test_id: string;
-    student_id: string;
-    started_at: string;
-    finished_at?: string;
-    score?: number;
-    points?: number;
-    status: 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED';
-}
-
 export const testService = {
     // Listar todas as provas (instrutor)
     async getAllTests(): Promise<ScheduledTest[]> {
@@ -66,10 +34,17 @@ export const testService = {
             const { data, error } = await supabase
                 .from('tests')
                 .select('*')
-                .order('createdAt', { ascending: false });
+                .order('created_at', { ascending: false }); // snake_case is likely what DB has, but standard tests might be camel case in frontend
 
             if (error) throw error;
-            return data as ScheduledTest[];
+
+            // Map keys just in case
+            return data.map((t: any) => ({
+                ...t,
+                createdAt: t.created_at,
+                questionCount: t.question_count || t.questionCount || 0,
+                creatorId: t.creator_id
+            })) as ScheduledTest[];
         } catch (error) {
             console.error('Erro ao buscar testes', error);
             return [];
@@ -86,7 +61,10 @@ export const testService = {
         try {
             const { data, error } = await supabase
                 .from('tests')
-                .select('*')
+                .select(`
+                    *,
+                    questions:test_questions(*)
+                 `)
                 .eq('id', testId)
                 .single();
 
@@ -103,13 +81,10 @@ export const testService = {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Usuário não autenticado');
 
-            // Calculate score simple logic or just store raw data. 
-            // Assuming the backend did logic, here we might need to trust the client sending correct/score or recalculate.
-            // For now, we trust the caller has calculated score or we store raw answers.
-            // Simplifying: just storing the result.
-
             const correctCount = resultData.answers.filter((a: any) => a.isCorrect).length;
-            const score = (correctCount / resultData.answers.length) * 100 || 0;
+            const score = resultData.answers.length > 0
+                ? (correctCount / resultData.answers.length) * 100
+                : 0;
 
             const { data, error } = await supabase
                 .from('test_results')
@@ -166,27 +141,39 @@ export const testService = {
             const { data: test, error } = await supabase
                 .from('tests')
                 .insert({
-                    name: testData.name,
+                    name: testData.title || testData.name, // Support both fields
                     description: testData.description,
-                    duration: testData.duration,
-                    questionCount: testData.questionCount || testData.questions?.length || 0,
-                    creatorId: user?.id
+                    duration: (testData.questionCount || 20) * (testData.time_per_question || 30),
+                    question_count: testData.questionCount || testData.questions?.length || 20,
+                    creator_id: user?.id,
+                    location: testData.location,
+                    category_id: testData.category_id,
+                    status: 'SCHEDULED' // Default status
                 })
                 .select()
                 .single();
 
             if (error) throw error;
 
-            // If there are questions, insert them. Assuming 'test_questions' table exists or similar logic
+            // If there are specific questions (Written Test), insert them
+            // The questions array coming from the frontend is expected to be an array of Equipment IDs for CreateTestWithQuestions call
+            // OR map directly if called differently.
+            // Based on CreateTestPage.tsx: createTestWithQuestions passes array of IDs.
+
+            // Check if we have 'questions' (implied ID list from logic below)
             if (testData.questions && testData.questions.length > 0) {
-                const questionsToInsert = testData.questions.map((q: any, index: number) => ({
-                    testId: test.id,
-                    equipmentId: q.equipmentId,
-                    order: index
+                // Map equipment IDs to DB rows
+                const questionsToInsert = testData.questions.map((qId: string, index: number) => ({
+                    test_id: test.id,
+                    equipment_id: qId,
+                    question_order: index
                 }));
 
-                // Note: You might need to check if 'test_questions' table exists in your schema
-                // await supabase.from('test_questions').insert(questionsToInsert);
+                const { error: qError } = await supabase
+                    .from('test_questions')
+                    .insert(questionsToInsert);
+
+                if (qError) console.error("Error inserting questions:", qError);
             }
 
             return test as ScheduledTest;
@@ -195,7 +182,16 @@ export const testService = {
         }
     },
 
+    async createTestWithQuestions(data: any, eqIds: string[]): Promise<ScheduledTest> {
+        // Pass eqIds as 'questions' property to the main create function
+        return this.createTest({ ...data, questions: eqIds });
+    },
+
     // ---- MOCKED / NOT IMPLEMENTED ----
+    async deleteTest(testId: string): Promise<void> {
+        const { error } = await supabase.from('tests').delete().eq('id', testId);
+        if (error) throw error;
+    },
 
     async activateTest(_testId: string): Promise<void> { console.warn('activateTest not implemented'); },
     async finishTest(_testId: string): Promise<void> { console.warn('finishTest not implemented'); },
@@ -205,12 +201,8 @@ export const testService = {
     async completeAttempt(_attemptId: string, _score: number, _correct: number, _total: number, _time: number, _answers: any[]): Promise<void> { },
     async getTestAttempts(_testId: string): Promise<any[]> { return []; },
     async getStudentAttempt(_testId: string): Promise<any> { return null; },
-    async deleteTest(_testId: string): Promise<void> {
-        await supabase.from('tests').delete().eq('id', _testId);
-    },
     async updateTest(_testId: string, _updates: any): Promise<void> { console.warn('updateTest not implemented'); },
 
-    // Whitelist methods (mocked)
     async getStudentsWhoMissedTest(_testId: string): Promise<any[]> { return []; },
     async addStudentToTest(_testId: string, _studentId: string): Promise<void> { },
     async addMultipleStudentsToTest(_testId: string, _ids: string[]): Promise<void> { },
@@ -219,7 +211,6 @@ export const testService = {
     async getTestAllowedStudents(_testId: string): Promise<any[]> { return []; },
     async canStudentTakeTest(_testId: string): Promise<boolean> { return true; },
 
-    // Correction methods
     async saveStudentAnswer(_attemptId: string, _qId: string, _text: string, _time?: number): Promise<void> { },
     async getStudentAnswers(_attemptId: string): Promise<any[]> { return []; },
     async correctAnswer(_ansId: string, _correct: boolean, _points: number, _feedback?: string): Promise<void> { },
@@ -228,9 +219,5 @@ export const testService = {
     async getAttemptForCorrection(_attemptId: string): Promise<any> { return { attempt: {}, answers: [] }; },
     async getTestAttemptsForCorrection(_testId: string): Promise<any[]> { return []; },
 
-    async createTestWithQuestions(data: any, eqIds: string[]): Promise<ScheduledTest> {
-        // Fallback to simple create logic
-        return this.createTest({ ...data, questions: eqIds.map(id => ({ equipmentId: id })) });
-    },
     async getTestQuestions(_testId: string): Promise<any[]> { return []; }
 };

@@ -73,7 +73,7 @@ export function TestPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {tests.map(test => {
-                            // MOCKED STATUS for local dev
+                            // MOCKED STATUS for local dev - Ideally check 'status' column from DB
                             const isActive = true;
                             const scheduledDate = new Date(test.createdAt || Date.now());
 
@@ -101,7 +101,7 @@ export function TestPage() {
                                             </div>
                                             <div className="flex justify-between text-xs">
                                                 <span className="text-gray-500 uppercase">Duração</span>
-                                                <span className="text-white font-bold">{test.duration} min</span>
+                                                <span className="text-white font-bold">{Math.ceil((test.duration || 0) / 60)} min</span>
                                             </div>
                                             <div className="flex justify-between text-xs">
                                                 <span className="text-gray-500 uppercase">Tipo</span>

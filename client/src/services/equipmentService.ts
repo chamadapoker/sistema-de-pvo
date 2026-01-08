@@ -195,4 +195,54 @@ export const equipmentService = {
       throw new Error(error.message || "Erro ao excluir equipamento.");
     }
   },
+
+  // --- CATEGORY CRUD ---
+
+  async createCategory(name: string, description?: string): Promise<Category> {
+    try {
+      // Get max order
+      const { data: maxOrderData } = await supabase.from('categories').select('order').order('order', { ascending: false }).limit(1);
+      const nextOrder = (maxOrderData?.[0]?.order || 0) + 1;
+
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({ name, description, order: nextOrder })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Category;
+    } catch (error: any) {
+      throw new Error(error.message || "Erro ao criar categoria.");
+    }
+  },
+
+  async updateCategory(id: number, updates: Partial<Category>): Promise<Category> {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Category;
+    } catch (error: any) {
+      throw new Error(error.message || "Erro ao atualizar categoria.");
+    }
+  },
+
+  async deleteCategory(id: number): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error: any) {
+      throw new Error(error.message || "Erro ao excluir categoria.");
+    }
+  }
 };
