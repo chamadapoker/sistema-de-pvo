@@ -287,6 +287,8 @@ function mapCountryFromDB(dbRecord: any): Country {
         coatOfArmsUrl: dbRecord.coat_of_arms_url,
         description: dbRecord.description,
         militaryDescription: dbRecord.military_description,
-        alliance: dbRecord.alliance || 'Non-Aligned'
+        alliance: dbRecord.alliance || 'Non-Aligned',
+        latitude: dbRecord.latitude,
+        longitude: dbRecord.longitude
     };
 }
