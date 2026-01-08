@@ -246,6 +246,34 @@ export const testService = {
                     .insert(questionsToInsert);
 
                 if (qError) console.error("Error inserting questions:", qError);
+            } else {
+                // Auto-generate questions if not provided
+                let query = supabase.from('equipment').select('id');
+
+                if (testData.category_id) {
+                    query = query.eq('category_id', testData.category_id);
+                }
+
+                const { data: equipmentPool, error: eqError } = await query;
+
+                if (!eqError && equipmentPool && equipmentPool.length > 0) {
+                    // Shuffle array
+                    const shuffled = equipmentPool.sort(() => 0.5 - Math.random());
+                    // Take required count
+                    const selected = shuffled.slice(0, testData.question_count || 20);
+
+                    const questionsToInsert = selected.map((item: any, index: number) => ({
+                        test_id: test.id,
+                        equipment_id: item.id,
+                        question_order: index
+                    }));
+
+                    const { error: qError } = await supabase
+                        .from('test_questions')
+                        .insert(questionsToInsert);
+
+                    if (qError) console.error("Error inserting auto-generated questions:", qError);
+                }
             }
 
             return test as ScheduledTest;
