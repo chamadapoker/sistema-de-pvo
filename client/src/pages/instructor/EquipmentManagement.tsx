@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { equipmentService } from '../../services/equipmentService';
 import type { Equipment, Category } from '../../types';
@@ -22,9 +22,12 @@ export function EquipmentManagement() {
     // State
     const [equipments, setEquipments] = useState<Equipment[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+
+    // Server-Side Filters
     const [filterText, setFilterText] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [hasSearched, setHasSearched] = useState(false);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,21 +49,38 @@ export function EquipmentManagement() {
     const [newCategoryName, setNewCategoryName] = useState('');
 
     useEffect(() => {
-        loadData();
+        loadCategories();
     }, []);
 
-    const loadData = async () => {
-        setLoading(true);
+    const loadCategories = async () => {
         try {
-            const [eqRes, catRes] = await Promise.all([
-                equipmentService.getAllEquipment(),
-                equipmentService.getCategories()
-            ]);
-            setEquipments(eqRes.equipment);
-            setCategories(catRes.categories);
+            const { categories } = await equipmentService.getCategories();
+            setCategories(categories);
         } catch (error) {
             console.error(error);
-            alert('Erro ao carregar dados');
+        }
+    };
+
+    const handleSearch = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+
+        // Prevent loading all if no filter
+        if (!filterText && !selectedCategory) {
+            alert('Por favor, selecione uma categoria ou digite um termo de busca.');
+            return;
+        }
+
+        setLoading(true);
+        setHasSearched(true);
+        try {
+            const { equipment } = await equipmentService.getAllEquipment({
+                categoryId: selectedCategory ? parseInt(selectedCategory) : undefined,
+                search: filterText || undefined
+            });
+            setEquipments(equipment);
+        } catch (error) {
+            console.error(error);
+            alert('Erro ao buscar equipamentos');
         } finally {
             setLoading(false);
         }
@@ -125,7 +145,8 @@ export function EquipmentManagement() {
                 });
             }
             setIsModalOpen(false);
-            loadData();
+            // Refresh list if we have a search active
+            if (hasSearched) handleSearch();
         } catch (error: any) {
             alert('Erro ao salvar: ' + error.message);
         } finally {
@@ -137,7 +158,7 @@ export function EquipmentManagement() {
         if (confirm('Tem certeza? Isso não pode ser desfeito.')) {
             try {
                 await equipmentService.deleteEquipment(id);
-                loadData();
+                if (hasSearched) handleSearch();
             } catch (error) {
                 alert('Erro ao deletar');
             }
@@ -150,7 +171,7 @@ export function EquipmentManagement() {
             if (!newCategoryName.trim()) return;
             await equipmentService.createCategory(newCategoryName);
             setNewCategoryName('');
-            loadData();
+            loadCategories();
         } catch (error: any) {
             alert('Erro ao criar categoria: ' + error.message);
         }
@@ -160,19 +181,12 @@ export function EquipmentManagement() {
         if (confirm('Tem certeza que deseja excluir esta categoria? Equipamentos vinculados ficarão sem categoria.')) {
             try {
                 await equipmentService.deleteCategory(id);
-                loadData();
+                loadCategories();
             } catch (error: any) {
                 alert('Erro ao excluir categoria: ' + error.message);
             }
         }
     };
-
-    // Filtering
-    const filtered = equipments.filter(e => {
-        const matchText = (e.name + e.code).toLowerCase().includes(filterText.toLowerCase());
-        const matchCat = selectedCategory ? e.categoryId.toString() === selectedCategory : true;
-        return matchText && matchCat;
-    });
 
     return (
         <DashboardLayout>
@@ -184,7 +198,7 @@ export function EquipmentManagement() {
                             <span className="text-red-600">Arsenal</span> // Gerenciamento
                         </h1>
                         <p className="text-sm text-gray-500 font-mono uppercase tracking-widest mt-2">
-                            {equipments.length} Vetores Catalogados
+                            Base de Dados de Vetores
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -203,65 +217,87 @@ export function EquipmentManagement() {
                     </div>
                 </div>
 
-                {/* Filters */}
-                <div className="flex gap-4 bg-[#0a0a0a] p-4 border border-[#222]">
-                    <input
-                        type="text"
-                        placeholder="BUSCAR POR NOME OU CÓDIGO..."
-                        className="flex-1 bg-[#111] border border-[#333] px-4 py-2 text-white font-mono focus:border-red-600 focus:outline-none"
-                        value={filterText}
-                        onChange={e => setFilterText(e.target.value)}
-                    />
-                    <select
-                        className="bg-[#111] border border-[#333] px-4 py-2 text-white font-mono focus:border-red-600 focus:outline-none"
-                        value={selectedCategory}
-                        onChange={e => setSelectedCategory(e.target.value)}
-                    >
-                        <option value="">TODAS AS CATEGORIAS</option>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                </div>
+                {/* Filters / Search Bar */}
+                <form onSubmit={handleSearch} className="gaming-card bg-[#0a0a0a] border border-[#222] p-6 space-y-4">
+                    <div className="text-xs text-red-500 font-mono uppercase tracking-widest mb-2">Filtros de Busca (Obrigatório)</div>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <input
+                            type="text"
+                            placeholder="BUSCAR POR NOME OU CÓDIGO..."
+                            className="flex-1 bg-[#111] border border-[#333] px-4 py-3 text-white font-mono focus:border-red-600 focus:outline-none uppercase"
+                            value={filterText}
+                            onChange={e => setFilterText(e.target.value)}
+                        />
+                        <select
+                            className="bg-[#111] border border-[#333] px-4 py-3 text-white font-mono focus:border-red-600 focus:outline-none uppercase min-w-[200px]"
+                            value={selectedCategory}
+                            onChange={e => setSelectedCategory(e.target.value)}
+                        >
+                            <option value="">TODAS AS CATEGORIAS</option>
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                        <button
+                            type="submit"
+                            disabled={loading || (!filterText && !selectedCategory)}
+                            className="btn-gaming bg-red-900/20 text-red-500 border-red-900 hover:bg-red-600 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? 'BUSCANDO...' : 'LOCALIZAR'}
+                        </button>
+                    </div>
+                </form>
 
-                {/* List */}
+                {/* Results List */}
                 <div className="grid grid-cols-1 gap-2">
                     {loading ? (
                         <div className="text-center py-20 text-red-600 animate-pulse font-mono">CARREGANDO DADOS CLASSIFICADOS...</div>
-                    ) : filtered.length === 0 ? (
+                    ) : !hasSearched ? (
+                        <div className="text-center py-20 bg-[#0a0a0a] border border-dashed border-[#333]">
+                            <div className="text-4xl mb-4 opacity-50">🔍</div>
+                            <p className="text-gray-500 font-mono uppercase">Utilize os filtros acima para localizar equipamentos.</p>
+                        </div>
+                    ) : equipments.length === 0 ? (
                         <div className="text-center py-20 text-gray-600 font-mono">NENHUM EQUIPAMENTO ENCONTRADO</div>
                     ) : (
-                        filtered.map(item => (
-                            <div key={item.id} className="group flex items-center gap-4 bg-[#0a0a0a] border border-[#222] p-2 hover:border-red-600 transition-all">
-                                <img src={item.imagePath} alt={item.name} className="w-16 h-12 object-cover border border-[#333]" />
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-white font-bold uppercase italic">{item.name}</h3>
-                                        <span className="text-[10px] bg-[#111] text-gray-500 px-2 py-0.5 border border-[#333]">{item.code}</span>
-                                    </div>
-                                    <p className="text-xs text-red-500 font-mono">{categories.find(c => c.id === item.categoryId)?.name || 'Sem Categoria'}</p>
-                                </div>
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity px-4">
-                                    <button
-                                        onClick={() => handleOpenModal(item)}
-                                        className="text-xs font-mono text-gray-400 hover:text-white border border-[#333] hover:border-white px-3 py-1 bg-black"
-                                    >
-                                        EDITAR
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(item.id)}
-                                        className="text-xs font-mono text-red-900 hover:text-red-500 border border-red-900/30 hover:border-red-500 px-3 py-1 bg-black"
-                                    >
-                                        EXCLUIR
-                                    </button>
-                                </div>
+                        <>
+                            <div className="text-right text-xs text-gray-500 font-mono uppercase mb-2">
+                                {equipments.length} Registros Encontrados
                             </div>
-                        ))
+                            {equipments.map(item => (
+                                <div key={item.id} className="group flex items-center gap-4 bg-[#0a0a0a] border border-[#222] p-2 hover:border-red-600 transition-all">
+                                    <div className="w-20 h-14 bg-black border border-[#333] overflow-hidden flex-shrink-0">
+                                        <img src={item.imagePath} alt={item.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="text-white font-bold uppercase italic truncate">{item.name}</h3>
+                                            <span className="text-[10px] bg-[#111] text-gray-500 px-2 py-0.5 border border-[#333] whitespace-nowrap">{item.code}</span>
+                                        </div>
+                                        <p className="text-xs text-red-500 font-mono truncate">{categories.find(c => c.id === item.categoryId)?.name || 'Sem Categoria'}</p>
+                                    </div>
+                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity px-4">
+                                        <button
+                                            onClick={() => handleOpenModal(item)}
+                                            className="text-xs font-mono text-gray-400 hover:text-white border border-[#333] hover:border-white px-3 py-1 bg-black uppercase"
+                                        >
+                                            Editar
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(item.id)}
+                                            className="text-xs font-mono text-red-900 hover:text-red-500 border border-red-900/30 hover:border-red-500 px-3 py-1 bg-black uppercase"
+                                        >
+                                            Excluir
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </>
                     )}
                 </div>
 
                 {/* CATEGORY MANAGEMENT MODAL */}
                 {isCategoryModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                        <div className="bg-[#0f0f0f] border-2 border-yellow-600 w-full max-w-md p-6 shadow-2xl">
+                        <div className="bg-[#0f0f0f] border-2 border-yellow-600 w-full max-w-md p-6 shadow-2xl animate-fade-in">
                             <div className="flex justify-between items-center border-b border-yellow-900/30 pb-4 mb-4">
                                 <h2 className="text-xl font-black italic text-white uppercase text-yellow-500">Gerenciar Categorias</h2>
                                 <button onClick={() => setIsCategoryModalOpen(false)} className="text-gray-500 hover:text-white">✕</button>
@@ -273,7 +309,7 @@ export function EquipmentManagement() {
                                     type="text"
                                     required
                                     placeholder="Nova Categoria..."
-                                    className="flex-1 bg-[#0a0a0a] border border-[#333] p-2 text-white text-sm focus:border-yellow-600 outline-none"
+                                    className="flex-1 bg-[#0a0a0a] border border-[#333] p-2 text-white text-sm focus:border-yellow-600 outline-none uppercase font-mono"
                                     value={newCategoryName}
                                     onChange={e => setNewCategoryName(e.target.value)}
                                 />
@@ -281,7 +317,7 @@ export function EquipmentManagement() {
                             </form>
 
                             {/* List */}
-                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                 {categories.map(cat => (
                                     <div key={cat.id} className="flex items-center justify-between bg-[#0a0a0a] p-3 border border-[#222] hover:border-yellow-900/50 transition-colors">
                                         <span className="text-sm text-gray-300 font-mono uppercase">{cat.name}</span>
@@ -303,7 +339,7 @@ export function EquipmentManagement() {
                 {/* EDIT/CREATE MODAL */}
                 {isModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-                        <div className="bg-[#0f0f0f] border-2 border-red-900 w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col md:flex-row shadow-2xl">
+                        <div className="bg-[#0f0f0f] border-2 border-red-900 w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col md:flex-row shadow-2xl animate-fade-in">
 
                             {/* Left: Form */}
                             <div className="p-8 flex-1 space-y-6">
@@ -317,7 +353,7 @@ export function EquipmentManagement() {
                                             <label className="text-xs font-mono text-gray-500 uppercase">Nome</label>
                                             <input
                                                 required
-                                                className="w-full bg-[#0a0a0a] border border-[#333] p-2 text-white focus:border-red-600 focus:outline-none"
+                                                className="w-full bg-[#0a0a0a] border border-[#333] p-2 text-white focus:border-red-600 focus:outline-none uppercase"
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                             />
@@ -326,7 +362,7 @@ export function EquipmentManagement() {
                                             <label className="text-xs font-mono text-gray-500 uppercase">Designação (Código)</label>
                                             <input
                                                 required
-                                                className="w-full bg-[#0a0a0a] border border-[#333] p-2 text-white focus:border-red-600 focus:outline-none"
+                                                className="w-full bg-[#0a0a0a] border border-[#333] p-2 text-white focus:border-red-600 focus:outline-none uppercase"
                                                 value={formData.code}
                                                 onChange={e => setFormData({ ...formData, code: e.target.value })}
                                             />
@@ -337,7 +373,7 @@ export function EquipmentManagement() {
                                         <label className="text-xs font-mono text-gray-500 uppercase">Categoria</label>
                                         <select
                                             required
-                                            className="w-full bg-[#0a0a0a] border border-[#333] p-2 text-white focus:border-red-600 focus:outline-none"
+                                            className="w-full bg-[#0a0a0a] border border-[#333] p-2 text-white focus:border-red-600 focus:outline-none uppercase"
                                             value={formData.categoryId}
                                             onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
                                         >

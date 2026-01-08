@@ -11,6 +11,9 @@ export function TestManagement() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Edit State
+    const [editingTestId, setEditingTestId] = useState<string | null>(null);
+
     // Results View State
     const [isResultsModalOpen, setIsResultsModalOpen] = useState(false);
     const [selectedTestResults, setSelectedTestResults] = useState<any[]>([]);
@@ -61,28 +64,60 @@ export function TestManagement() {
         }
     };
 
+    const handleCreateClick = () => {
+        setEditingTestId(null);
+        setFormData({
+            title: '',
+            description: '',
+            category_id: '',
+            question_count: 20,
+            time_per_question: 15,
+            passing_score: 70,
+            scheduled_date: '',
+            location: '',
+        });
+        setView('create');
+    };
+
+    const handleEditClick = (test: ScheduledTest) => {
+        setEditingTestId(test.id);
+        const testDate = new Date(test.createdAt);
+        // Adjust for timezone offset if necessary, but ISO slice(0,16) is a quick hack for datetime-local
+        // Better to use local time for the input
+        const localDate = new Date(testDate.getTime() - (testDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+
+        setFormData({
+            title: test.name,
+            description: test.description || '',
+            category_id: (test as any).categoryId?.toString() || '',
+            question_count: test.questionCount,
+            time_per_question: test.duration ? (Math.round(test.duration / (test.questionCount || 1))) : 15,
+            passing_score: test.passingScore,
+            scheduled_date: localDate,
+            location: test.location || '',
+        });
+        setView('create');
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await testService.createTest({
+            const payload = {
                 ...formData,
                 category_id: formData.category_id ? parseInt(formData.category_id) : undefined
-            });
+            };
+
+            if (editingTestId) {
+                await testService.updateTest(editingTestId, payload);
+            } else {
+                await testService.createTest(payload);
+            }
+
             setView('list');
             loadData();
-            // Reset form
-            setFormData({
-                title: '',
-                description: '',
-                category_id: '',
-                question_count: 20,
-                time_per_question: 15,
-                passing_score: 70,
-                scheduled_date: '',
-                location: '',
-            });
+            setEditingTestId(null);
         } catch (error: any) {
-            alert('Erro ao criar prova: ' + error.message);
+            alert('Erro ao salvar prova: ' + error.message);
         }
     };
 
@@ -131,7 +166,6 @@ export function TestManagement() {
     };
 
     const getStatusBadge = (test: ScheduledTest) => {
-        // Use real status from DB, fallback to SCHEDULED
         const status = (test as any).status || 'SCHEDULED';
         switch (status) {
             case 'SCHEDULED':
@@ -147,15 +181,15 @@ export function TestManagement() {
         }
     };
 
-    // CREATE FORM
+    // CREATE / EDIT FORM
     if (view === 'create') {
         return (
             <DashboardLayout>
-                <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
+                <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
                     <div className="flex items-center justify-between border-b border-green-900/30 pb-6">
                         <div>
                             <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter">
-                                <span className="text-green-600">Criar</span> Nova Avaliação
+                                <span className="text-green-600">{editingTestId ? 'Editar' : 'Criar'}</span> Avaliação
                             </h1>
                             <p className="text-sm text-gray-500 font-mono uppercase tracking-widest mt-2">
                                 Configure os parâmetros da prova
@@ -216,7 +250,7 @@ export function TestManagement() {
                             <h3 className="text-xl font-black italic text-green-600 uppercase mb-4">Configuração da Prova</h3>
 
                             <div className="grid grid-cols-3 gap-4">
-                                <div>
+                                <div className="space-y-2">
                                     <label className="block text-sm font-mono uppercase text-gray-400 mb-2">Nº Questões</label>
                                     <input
                                         type="number"
@@ -227,6 +261,7 @@ export function TestManagement() {
                                         onChange={(e) => setFormData({ ...formData, question_count: parseInt(e.target.value) })}
                                         className="w-full bg-[#111] border-2 border-[#333] text-white px-4 py-3 font-mono focus:border-green-600 focus:outline-none"
                                     />
+                                    {editingTestId && <p className="text-[10px] text-red-500 font-mono">⚠️ Editar pode regenerar questões</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-mono uppercase text-gray-400 mb-2">Tempo/Questão (s)</label>
@@ -284,7 +319,7 @@ export function TestManagement() {
                         </div>
 
                         <button type="submit" className="w-full btn-gaming bg-green-700 hover:bg-green-600 border-green-500 py-4 text-xl">
-                            CRIAR AVALIAÇÃO
+                            {editingTestId ? 'SALVAR ALTERAÇÕES' : 'CRIAR AVALIAÇÃO'}
                         </button>
                     </form>
                 </div>
@@ -295,7 +330,7 @@ export function TestManagement() {
     // LIST VIEW
     return (
         <DashboardLayout>
-            <div className="space-y-8 animate-fade-in">
+            <div className="space-y-8 animate-fade-in pb-20">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-green-900/30 pb-6">
                     <div>
@@ -306,12 +341,12 @@ export function TestManagement() {
                             Criar e controlar provas agendadas
                         </p>
                     </div>
-                    <Link
-                        to="/instructor/tests/create"
+                    <button
+                        onClick={handleCreateClick}
                         className="btn-gaming bg-green-700 hover:bg-green-600 border-green-500"
                     >
                         + Nova Avaliação
-                    </Link>
+                    </button>
                 </div>
 
                 {loading && !isResultsModalOpen ? (
@@ -325,12 +360,12 @@ export function TestManagement() {
                         </svg>
                         <h2 className="text-3xl font-black italic text-white uppercase mb-4">Nenhuma Avaliação Criada</h2>
                         <p className="text-gray-400 font-mono mb-8">Crie sua primeira avaliação agendada para os alunos.</p>
-                        <Link
-                            to="/instructor/tests/create"
+                        <button
+                            onClick={handleCreateClick}
                             className="btn-gaming bg-green-700 hover:bg-green-600 border-green-500"
                         >
                             CRIAR PRIMEIRA AVALIAÇÃO
-                        </Link>
+                        </button>
                     </div>
                 ) : (
                     <div className="space-y-4">
@@ -375,12 +410,20 @@ export function TestManagement() {
                                             </button>
 
                                             {status === 'SCHEDULED' && (
-                                                <button
-                                                    onClick={() => handleActivate(test.id)}
-                                                    className="btn-gaming bg-blue-900/30 text-blue-500 border-blue-800 hover:bg-blue-900/50 hover:text-white text-xs py-2 px-4"
-                                                >
-                                                    LIBERAR
-                                                </button>
+                                                <>
+                                                    <button
+                                                        onClick={() => handleEditClick(test)}
+                                                        className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-blue-500 hover:text-blue-500 text-xs py-2 px-4 uppercase"
+                                                    >
+                                                        Editar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleActivate(test.id)}
+                                                        className="btn-gaming bg-blue-900/30 text-blue-500 border-blue-800 hover:bg-blue-900/50 hover:text-white text-xs py-2 px-4"
+                                                    >
+                                                        LIBERAR
+                                                    </button>
+                                                </>
                                             )}
                                             {status === 'ACTIVE' && (
                                                 <button
@@ -406,7 +449,7 @@ export function TestManagement() {
                     </div>
                 )}
 
-                {/* RESULTS MODAL */}
+                {/* RESULTS MODAL (Existing Code) */}
                 {isResultsModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
                         <div className="bg-[#0f0f0f] border-2 border-green-600 w-full max-w-4xl max-h-[80vh] overflow-y-auto shadow-2xl p-6">
