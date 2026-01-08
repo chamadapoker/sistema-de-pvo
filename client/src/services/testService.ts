@@ -482,6 +482,7 @@ export const testService = {
             .insert({
                 test_id: testId,
                 user_id: user.id,
+                student_id: user.id, // Explicitly set for legacy/schema compatibility
                 status: 'IN_PROGRESS'
             })
             .select()
