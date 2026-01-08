@@ -1,6 +1,9 @@
--- ADICIONA PAÍSES FALTANTES (G20 + POTÊNCIAS MILITARES)
--- Execute este script no SQL Editor do Supabase
+-- 1. ADICIONAR COLUNAS FALTANTES
+ALTER TABLE countries 
+ADD COLUMN IF NOT EXISTS alliance VARCHAR(100) DEFAULT 'Non-Aligned',
+ADD COLUMN IF NOT EXISTS military_rank INTEGER DEFAULT 999;
 
+-- 2. INSERIR PAÍSES
 INSERT INTO countries (name, code, code_2, region, capital, continent, flag_url, alliance, military_rank)
 VALUES 
 ('Rússia', 'RUS', 'RU', 'Eastern Europe', 'Moscow', 'Europe', 'https://flagcdn.com/w320/ru.png', 'CSTO', 2),
@@ -20,9 +23,6 @@ VALUES
 ('Índia', 'IND', 'IN', 'South Asia', 'New Delhi', 'Asia', 'https://flagcdn.com/w320/in.png', 'BRICS', 4),
 ('Austrália', 'AUS', 'AU', 'Oceania', 'Canberra', 'Oceania', 'https://flagcdn.com/w320/au.png', 'AUKUS', 13),
 ('Canadá', 'CAN', 'CA', 'North America', 'Ottawa', 'North America', 'https://flagcdn.com/w320/ca.png', 'NATO', 27)
-ON CONFLICT (code) DO NOTHING;
-
--- UPDATE EXISTING TO MATCH NEW STYLE
-UPDATE countries SET alliance = 'BRICS', military_rank = 12 WHERE code = 'BRA';
-UPDATE countries SET alliance = 'NATO', military_rank = 1 WHERE code = 'USA';
-UPDATE countries SET alliance = 'Shanghai Pact', military_rank = 3 WHERE code = 'CHN';
+ON CONFLICT (code) DO UPDATE SET 
+    alliance = EXCLUDED.alliance,
+    military_rank = EXCLUDED.military_rank;
