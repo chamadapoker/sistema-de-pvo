@@ -128,8 +128,142 @@ export const countryService = {
         return (data || []).map(mapCountryFromDB);
     },
 
-    async addEquipmentToCountry() { return null; },
-    async removeEquipmentFromCountry() { return null; }
+    // ---- ADMIN / INSTRUCTOR CRUD ----
+
+    async createCountry(country: Partial<Country>, flagFile?: File, coatFile?: File): Promise<Country> {
+        let flagUrl = country.flagUrl;
+        let coatUrl = country.coatOfArmsUrl;
+
+        // Upload Flag
+        if (flagFile) {
+            const fileName = `flags/${Date.now()}_${flagFile.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('equipment-images') // Reusing existing bucket or create new 'flags' bucket. Let's reuse for simplicity if not restricted.
+                .upload(fileName, flagFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('equipment-images')
+                .getPublicUrl(fileName);
+
+            flagUrl = publicUrl;
+        }
+
+        // Upload Coat
+        if (coatFile) {
+            const fileName = `coats/${Date.now()}_${coatFile.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('equipment-images')
+                .upload(fileName, coatFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('equipment-images')
+                .getPublicUrl(fileName);
+
+            coatUrl = publicUrl;
+        }
+
+        const { data, error } = await supabase
+            .from('countries')
+            .insert({
+                name: country.name,
+                code: country.code,
+                code_2: country.code2,
+                region: country.region,
+                capital: country.capital,
+                continent: country.continent,
+                population: country.population,
+                area_km2: country.areaKm2,
+                currency_code: country.currencyCode,
+                currency_name: country.currencyName,
+                military_budget_usd: country.militaryBudgetUsd,
+                active_military: country.activeMilitary,
+                reserve_military: country.reserveMilitary,
+                military_rank: country.militaryRank,
+                flag_url: flagUrl,
+                coat_of_arms_url: coatUrl,
+                description: country.description,
+                military_description: country.militaryDescription,
+                alliance: country.alliance
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return mapCountryFromDB(data);
+    },
+
+    async updateCountry(id: number, updates: Partial<Country>, flagFile?: File, coatFile?: File): Promise<Country> {
+        let flagUrl = updates.flagUrl;
+        let coatUrl = updates.coatOfArmsUrl;
+
+        if (flagFile) {
+            const fileName = `flags/${Date.now()}_${flagFile.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('equipment-images')
+                .upload(fileName, flagFile);
+            if (uploadError) throw uploadError;
+            const { data: { publicUrl } } = supabase.storage
+                .from('equipment-images')
+                .getPublicUrl(fileName);
+            flagUrl = publicUrl;
+        }
+
+        if (coatFile) {
+            const fileName = `coats/${Date.now()}_${coatFile.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('equipment-images')
+                .upload(fileName, coatFile);
+            if (uploadError) throw uploadError;
+            const { data: { publicUrl } } = supabase.storage
+                .from('equipment-images')
+                .getPublicUrl(fileName);
+            coatUrl = publicUrl;
+        }
+
+        const dbUpdates: any = {};
+        if (updates.name !== undefined) dbUpdates.name = updates.name;
+        if (updates.code !== undefined) dbUpdates.code = updates.code;
+        if (updates.code2 !== undefined) dbUpdates.code_2 = updates.code2;
+        if (updates.region !== undefined) dbUpdates.region = updates.region;
+        if (updates.capital !== undefined) dbUpdates.capital = updates.capital;
+        if (updates.continent !== undefined) dbUpdates.continent = updates.continent;
+        if (updates.population !== undefined) dbUpdates.population = updates.population;
+        if (updates.areaKm2 !== undefined) dbUpdates.area_km2 = updates.areaKm2;
+        if (updates.currencyCode !== undefined) dbUpdates.currency_code = updates.currencyCode;
+        if (updates.currencyName !== undefined) dbUpdates.currency_name = updates.currencyName;
+        if (updates.militaryBudgetUsd !== undefined) dbUpdates.military_budget_usd = updates.militaryBudgetUsd;
+        if (updates.activeMilitary !== undefined) dbUpdates.active_military = updates.activeMilitary;
+        if (updates.reserveMilitary !== undefined) dbUpdates.reserve_military = updates.reserveMilitary;
+        if (updates.militaryRank !== undefined) dbUpdates.military_rank = updates.militaryRank;
+        if (flagUrl !== undefined) dbUpdates.flag_url = flagUrl;
+        if (coatUrl !== undefined) dbUpdates.coat_of_arms_url = coatUrl;
+        if (updates.description !== undefined) dbUpdates.description = updates.description;
+        if (updates.militaryDescription !== undefined) dbUpdates.military_description = updates.militaryDescription;
+        if (updates.alliance !== undefined) dbUpdates.alliance = updates.alliance;
+
+        const { data, error } = await supabase
+            .from('countries')
+            .update(dbUpdates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return mapCountryFromDB(data);
+    },
+
+    async deleteCountry(id: number): Promise<void> {
+        const { error } = await supabase
+            .from('countries')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+    }
 };
 
 function mapCountryFromDB(dbRecord: any): Country {

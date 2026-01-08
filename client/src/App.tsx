@@ -13,6 +13,7 @@ import { CountriesPage } from './pages/student/CountriesPage';
 import { CountryDetailsPage } from './pages/student/CountryDetailsPage';
 import { InstructorDashboard } from './pages/instructor/InstructorDashboard';
 import { EquipmentManagement } from './pages/instructor/EquipmentManagement';
+import { CountryManagement } from './pages/instructor/CountryManagement';
 import { TestManagement } from './pages/instructor/TestManagement';
 import { CreateTestPage } from './pages/instructor/CreateTestPage';
 import { CorrectTestPage } from './pages/instructor/CorrectTestPage';
@@ -42,9 +43,6 @@ function ProtectedRoute({
 
   // If user role is NOT in allowed roles for this route:
   if (allowedRoles && user) {
-    // If user is Admin/Instructor try to access student page, DENY unless specific override (handled above)
-    // But wait, the logic above already handles ALLOW. So here is DENY.
-    // Redirect to appropriate dashboard based on ACTUAL role
     if (user.role === 'ADMIN' || user.role === 'INSTRUCTOR') {
       return <Navigate to="/instructor/dashboard" replace />;
     }
@@ -80,7 +78,7 @@ function App() {
           <Route path="/" element={getDefaultRedirect()} />
           <Route path="/dashboard" element={getDefaultRedirect()} />
 
-          {/* Student Routes - ACCESSIBLE BY ALL ROLES now (for View as Student) */}
+          {/* Student Routes */}
           <Route
             path="/student/dashboard"
             element={
@@ -156,12 +154,20 @@ function App() {
             }
           />
 
-          {/* Instructor Routes - For INSTRUCTOR and ADMIN */}
+          {/* Instructor Routes */}
           <Route
             path="/instructor/dashboard"
             element={
               <ProtectedRoute allowedRoles={['INSTRUCTOR', 'ADMIN']}>
                 <InstructorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/instructor/countries"
+            element={
+              <ProtectedRoute allowedRoles={['INSTRUCTOR', 'ADMIN']}>
+                <CountryManagement />
               </ProtectedRoute>
             }
           />
@@ -206,7 +212,7 @@ function App() {
             }
           />
 
-          {/* Catch all - redirect to appropriate dashboard */}
+          {/* Catch all */}
           <Route path="*" element={getDefaultRedirect()} />
         </Routes>
       </BrowserRouter>

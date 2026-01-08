@@ -51,6 +51,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         if (isInstructorOrAdmin) {
             const items = [
                 { path: '/instructor/dashboard', label: 'Dashboard', icon: Icons.Home },
+                { path: '/instructor/countries', label: 'Nações', icon: Icons.Globe },
                 { path: '/instructor/equipment', label: 'Equipamentos', icon: Icons.Settings },
             ];
 
