@@ -47,6 +47,7 @@ export function EquipmentManagement() {
 
     // Category Form State
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
 
     useEffect(() => {
         loadCategories();
@@ -169,11 +170,18 @@ export function EquipmentManagement() {
         e.preventDefault();
         try {
             if (!newCategoryName.trim()) return;
-            await equipmentService.createCategory(newCategoryName);
+
+            if (editingCategoryId) {
+                await equipmentService.updateCategory(editingCategoryId, { name: newCategoryName });
+                setEditingCategoryId(null);
+            } else {
+                await equipmentService.createCategory(newCategoryName);
+            }
+
             setNewCategoryName('');
             loadCategories();
         } catch (error: any) {
-            alert('Erro ao criar categoria: ' + error.message);
+            alert('Erro ao salvar categoria: ' + error.message);
         }
     };
 
@@ -299,21 +307,46 @@ export function EquipmentManagement() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
                         <div className="bg-[#0f0f0f] border-2 border-yellow-600 w-full max-w-md p-6 shadow-2xl animate-fade-in">
                             <div className="flex justify-between items-center border-b border-yellow-900/30 pb-4 mb-4">
-                                <h2 className="text-xl font-black italic text-white uppercase text-yellow-500">Gerenciar Categorias</h2>
-                                <button onClick={() => setIsCategoryModalOpen(false)} className="text-gray-500 hover:text-white">✕</button>
+                                <h2 className="text-xl font-black italic text-white uppercase text-yellow-500">
+                                    {editingCategoryId ? 'Editar Categoria' : 'Gerenciar Categorias'}
+                                </h2>
+                                <button
+                                    onClick={() => {
+                                        setIsCategoryModalOpen(false);
+                                        setEditingCategoryId(null);
+                                        setNewCategoryName('');
+                                    }}
+                                    className="text-gray-500 hover:text-white"
+                                >
+                                    ✕
+                                </button>
                             </div>
 
-                            {/* Create Form */}
+                            {/* Create/Edit Form */}
                             <form onSubmit={handleCreateCategory} className="mb-6 flex gap-2">
                                 <input
                                     type="text"
                                     required
-                                    placeholder="Nova Categoria..."
+                                    placeholder="Nome da categoria..."
                                     className="flex-1 bg-[#0a0a0a] border border-[#333] p-2 text-white text-sm focus:border-yellow-600 outline-none uppercase font-mono"
                                     value={newCategoryName}
                                     onChange={e => setNewCategoryName(e.target.value)}
                                 />
-                                <button type="submit" className="bg-yellow-800 hover:bg-yellow-700 text-white px-4 text-xs font-bold uppercase transition-colors">CRIAR</button>
+                                <button type="submit" className="bg-yellow-800 hover:bg-yellow-700 text-white px-4 text-xs font-bold uppercase transition-colors">
+                                    {editingCategoryId ? 'SALVAR' : 'CRIAR'}
+                                </button>
+                                {editingCategoryId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setEditingCategoryId(null);
+                                            setNewCategoryName('');
+                                        }}
+                                        className="bg-[#333] hover:bg-gray-600 text-white px-4 text-xs font-bold uppercase transition-colors"
+                                    >
+                                        CANCELAR
+                                    </button>
+                                )}
                             </form>
 
                             {/* List */}
@@ -321,13 +354,24 @@ export function EquipmentManagement() {
                                 {categories.map(cat => (
                                     <div key={cat.id} className="flex items-center justify-between bg-[#0a0a0a] p-3 border border-[#222] hover:border-yellow-900/50 transition-colors">
                                         <span className="text-sm text-gray-300 font-mono uppercase">{cat.name}</span>
-                                        <button
-                                            onClick={() => handleDeleteCategory(cat.id)}
-                                            className="text-red-900 hover:text-red-500 text-[10px] font-bold uppercase tracking-wider"
-                                            title="Excluir Categoria"
-                                        >
-                                            REMOVER
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setEditingCategoryId(cat.id);
+                                                    setNewCategoryName(cat.name);
+                                                }}
+                                                className="text-blue-500 hover:text-blue-400 text-[10px] font-bold uppercase tracking-wider"
+                                            >
+                                                EDITAR
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteCategory(cat.id)}
+                                                className="text-red-900 hover:text-red-500 text-[10px] font-bold uppercase tracking-wider"
+                                                title="Excluir Categoria"
+                                            >
+                                                REMOVER
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
