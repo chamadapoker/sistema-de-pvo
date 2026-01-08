@@ -77,6 +77,11 @@ export function CountryDetailsPage() {
                         <p className="text-gray-400 mt-2 max-w-3xl font-light leading-relaxed border-l-2 border-red-600 pl-4">
                             {country.description}
                         </p>
+                        {country.militaryDescription && (
+                            <p className="text-gray-500 mt-2 max-w-3xl font-mono text-xs leading-relaxed pl-4">
+                                DOUTRINA: {country.militaryDescription}
+                            </p>
+                        )}
                     </div>
                     <button
                         onClick={() => navigate('/student/countries')}
@@ -86,14 +91,34 @@ export function CountryDetailsPage() {
                     </button>
                 </div>
 
-                {/* Status Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {/* Status Grid - Intelligence Data */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
                         <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Total de Ativos</div>
-                        <div className="text-3xl font-black text-white">{formatNumber(stats?.totalEquipment)}</div>
-                        <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-40 transition-opacity">
-                            <div className="w-12 h-12 border-t-2 border-r-2 border-red-600"></div>
+                        <div className="text-xl md:text-2xl font-black text-white">{formatNumber(stats?.totalEquipment)}</div>
+                        <div className="absolute bottom-0 right-0 w-8 h-8 opacity-20 group-hover:opacity-40 transition-opacity">
+                            <div className="w-full h-full border-b-2 border-r-2 border-red-600"></div>
                         </div>
+                    </div>
+
+                    <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Força Ativa</div>
+                        <div className="text-xl md:text-2xl font-black text-lime-500">{formatNumber(country.activeMilitary)}</div>
+                    </div>
+
+                    <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">População</div>
+                        <div className="text-xl md:text-2xl font-black text-white">{(country.population ? (country.population / 1000000).toFixed(1) + 'M' : '-')}</div>
+                    </div>
+
+                    <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Orçamento (USD)</div>
+                        <div className="text-xl md:text-2xl font-black text-green-500">{(country.militaryBudgetUsd ? '$' + (country.militaryBudgetUsd / 1000000000).toFixed(1) + 'B' : '-')}</div>
+                    </div>
+
+                    <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Área (km²)</div>
+                        <div className="text-xl md:text-2xl font-black text-white">{formatNumber(country.areaKm2)}</div>
                     </div>
                 </div>
 
