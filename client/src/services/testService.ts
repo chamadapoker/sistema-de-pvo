@@ -202,22 +202,97 @@ export const testService = {
         return this.createTest({ ...data, questions: eqIds });
     },
 
-    // ---- MOCKED / NOT IMPLEMENTED ----
+    // ---- IMPLEMENTED METHODS ----
+
     async deleteTest(testId: string): Promise<void> {
         const { error } = await supabase.from('tests').delete().eq('id', testId);
         if (error) throw error;
     },
 
-    async activateTest(_testId: string): Promise<void> { console.warn('activateTest not implemented'); },
-    async finishTest(_testId: string): Promise<void> { console.warn('finishTest not implemented'); },
-    async getTestStatistics(_testId: string): Promise<any> { return {}; },
+    async activateTest(testId: string): Promise<void> {
+        const { error } = await supabase
+            .from('tests')
+            .update({ status: 'ACTIVE' })
+            .eq('id', testId);
+        if (error) throw error;
+    },
+
+    async finishTest(testId: string): Promise<void> {
+        const { error } = await supabase
+            .from('tests')
+            .update({ status: 'FINISHED' })
+            .eq('id', testId);
+        if (error) throw error;
+    },
+
+    async updateTest(testId: string, updates: any): Promise<void> {
+        const { error } = await supabase
+            .from('tests')
+            .update(updates)
+            .eq('id', testId);
+        if (error) throw error;
+    },
+
+    async getTestAttempts(testId: string): Promise<any[]> {
+        // Try to join with public.users or fall back
+        // Since we don't have FK setup to public.users on test_results (user_id is just UUID), join might fail.
+        // We will fetch results and then try to fetch public.users if needed.
+        // Or assume user_id is enough for now, or use auth.users if possible (but we can't select email easily).
+
+        // Let's try to select just * first.
+        const { data, error } = await supabase
+            .from('test_results')
+            .select(`*`)
+            .eq('test_id', testId)
+            .order('score', { ascending: false });
+
+        if (error) throw error;
+
+        // Populate minimal user info (email) manually if needed, 
+        // OR rely on the fact that we might have set up a view or something.
+        // For this Demo, we might just show User ID if join fails, or use Client side fetch.
+        // Actually, let's try to map it if we can.
+
+        return data.map((r: any) => ({
+            ...r,
+            completedAt: r.completed_at,
+            correctAnswers: r.correct_answers,
+            totalQuestions: r.total_questions,
+            // Mock user object so UI doesn't crash
+            user: { email: 'ID: ' + r.user_id.substring(0, 8) + '...' }
+        }));
+    },
+
+    async getTestStatistics(testId: string): Promise<any> {
+        const { data } = await supabase.from('test_results').select('score').eq('test_id', testId);
+        if (!data || data.length === 0) return { average: 0, count: 0, max: 0, min: 0 };
+
+        const scores = data.map(d => d.score);
+        return {
+            count: scores.length,
+            average: scores.reduce((a, b) => a + b, 0) / scores.length,
+            max: Math.max(...scores),
+            min: Math.min(...scores)
+        };
+    },
+
+    async getTestQuestions(testId: string): Promise<any[]> {
+        const { data } = await supabase.from('test_questions').select('*').eq('test_id', testId);
+        return data || [];
+    },
+
+    // ---- MOCKED / COMPLICATED CORRECTION LOGIC ----
+
+    // These require a 'student_answers' table or complex JSON parsing.
+    // Leaving as mocks for now to ensure stability of current working features.
+
+    async getTestsNeedingCorrection(): Promise<any[]> { return []; },
+    async getAttemptForCorrection(_attemptId: string): Promise<any> { return { attempt: {}, answers: [] }; },
+    async getTestAttemptsForCorrection(_testId: string): Promise<any[]> { return []; },
     async createAttempt(_testId: string): Promise<any> { return {}; },
     async updateAttempt(_attemptId: string, _updates: any): Promise<void> { },
     async completeAttempt(_attemptId: string, _score: number, _correct: number, _total: number, _time: number, _answers: any[]): Promise<void> { },
-    async getTestAttempts(_testId: string): Promise<any[]> { return []; },
     async getStudentAttempt(_testId: string): Promise<any> { return null; },
-    async updateTest(_testId: string, _updates: any): Promise<void> { console.warn('updateTest not implemented'); },
-
     async getStudentsWhoMissedTest(_testId: string): Promise<any[]> { return []; },
     async addStudentToTest(_testId: string, _studentId: string): Promise<void> { },
     async addMultipleStudentsToTest(_testId: string, _ids: string[]): Promise<void> { },
@@ -225,14 +300,8 @@ export const testService = {
     async removeStudentFromTest(_testId: string, _studentId: string): Promise<void> { },
     async getTestAllowedStudents(_testId: string): Promise<any[]> { return []; },
     async canStudentTakeTest(_testId: string): Promise<boolean> { return true; },
-
     async saveStudentAnswer(_attemptId: string, _qId: string, _text: string, _time?: number): Promise<void> { },
     async getStudentAnswers(_attemptId: string): Promise<any[]> { return []; },
     async correctAnswer(_ansId: string, _correct: boolean, _points: number, _feedback?: string): Promise<void> { },
-    async calculateWrittenTestScore(_attemptId: string): Promise<void> { },
-    async getTestsNeedingCorrection(): Promise<any[]> { return []; },
-    async getAttemptForCorrection(_attemptId: string): Promise<any> { return { attempt: {}, answers: [] }; },
-    async getTestAttemptsForCorrection(_testId: string): Promise<any[]> { return []; },
-
-    async getTestQuestions(_testId: string): Promise<any[]> { return []; }
+    async calculateWrittenTestScore(_attemptId: string): Promise<void> { }
 };
