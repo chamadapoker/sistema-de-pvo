@@ -34,11 +34,10 @@ export const testService = {
             const { data, error } = await supabase
                 .from('tests')
                 .select('*')
-                .order('created_at', { ascending: false }); // snake_case is likely what DB has, but standard tests might be camel case in frontend
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
 
-            // Map keys just in case
             return data.map((t: any) => ({
                 ...t,
                 createdAt: t.created_at,
@@ -89,21 +88,34 @@ export const testService = {
             const { data, error } = await supabase
                 .from('test_results')
                 .insert({
-                    userId: user.id,
-                    testId: resultData.testId,
+                    user_id: user.id,
+                    test_id: resultData.testId,
                     score: score,
-                    correctAnswers: correctCount,
-                    totalQuestions: resultData.answers.length,
-                    totalTime: resultData.totalTime,
-                    testType: resultData.testType,
+                    correct_answers: correctCount,
+                    total_questions: resultData.answers.length,
+                    total_time: resultData.totalTime,
+                    test_type: resultData.testType,
                     answers: JSON.stringify(resultData.answers),
-                    completedAt: new Date().toISOString()
+                    completed_at: new Date().toISOString()
                 })
                 .select()
                 .single();
 
             if (error) throw error;
-            return data as TestResult;
+
+            // Map back to camelCase for return
+            const mapped = {
+                ...data,
+                userId: data.user_id,
+                testId: data.test_id,
+                correctAnswers: data.correct_answers,
+                totalQuestions: data.total_questions,
+                totalTime: data.total_time,
+                testType: data.test_type,
+                completedAt: data.completed_at
+            };
+
+            return mapped as TestResult;
         } catch (error: any) {
             throw new Error(error.message || 'Erro ao salvar resultado');
         }
@@ -121,11 +133,22 @@ export const testService = {
                     *,
                     test:tests(*)
                 `)
-                .eq('userId', user.id)
-                .order('completedAt', { ascending: false });
+                .eq('user_id', user.id)
+                .order('completed_at', { ascending: false });
 
             if (error) throw error;
-            return data as TestResult[];
+
+            // Map
+            return data.map((item: any) => ({
+                ...item,
+                userId: item.user_id,
+                testId: item.test_id,
+                correctAnswers: item.correct_answers,
+                totalQuestions: item.total_questions,
+                totalTime: item.total_time,
+                testType: item.test_type,
+                completedAt: item.completed_at
+            })) as TestResult[];
         } catch (error) {
             console.error('Erro ao buscar resultados', error);
             return [];
@@ -141,28 +164,21 @@ export const testService = {
             const { data: test, error } = await supabase
                 .from('tests')
                 .insert({
-                    name: testData.title || testData.name, // Support both fields
+                    name: testData.title || testData.name,
                     description: testData.description,
                     duration: (testData.questionCount || 20) * (testData.time_per_question || 30),
                     question_count: testData.questionCount || testData.questions?.length || 20,
                     creator_id: user?.id,
                     location: testData.location,
                     category_id: testData.category_id,
-                    status: 'SCHEDULED' // Default status
+                    status: 'SCHEDULED'
                 })
                 .select()
                 .single();
 
             if (error) throw error;
 
-            // If there are specific questions (Written Test), insert them
-            // The questions array coming from the frontend is expected to be an array of Equipment IDs for CreateTestWithQuestions call
-            // OR map directly if called differently.
-            // Based on CreateTestPage.tsx: createTestWithQuestions passes array of IDs.
-
-            // Check if we have 'questions' (implied ID list from logic below)
             if (testData.questions && testData.questions.length > 0) {
-                // Map equipment IDs to DB rows
                 const questionsToInsert = testData.questions.map((qId: string, index: number) => ({
                     test_id: test.id,
                     equipment_id: qId,
@@ -183,7 +199,6 @@ export const testService = {
     },
 
     async createTestWithQuestions(data: any, eqIds: string[]): Promise<ScheduledTest> {
-        // Pass eqIds as 'questions' property to the main create function
         return this.createTest({ ...data, questions: eqIds });
     },
 
