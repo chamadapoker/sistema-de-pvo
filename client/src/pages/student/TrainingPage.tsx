@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ZoomableImage } from '../../components/ui/ZoomableImage';
+import { TechSheet } from '../../components/ui/TechSheet';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { equipmentService } from '../../services/equipmentService';
 import type { Category, Equipment } from '../../types';
@@ -8,10 +9,11 @@ export function TrainingPage() {
     // Navigation State
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [selectedModelGroup, setSelectedModelGroup] = useState<Equipment[] | null>(null);
+    const [showFullSheet, setShowFullSheet] = useState(false);
 
     // Data State
     const [categories, setCategories] = useState<Category[]>([]);
-    const [equipments, setEquipments] = useState<Equipment[] | null>([]); // Fixed type to allow null if needed, but array is safer
+    const [equipments, setEquipments] = useState<Equipment[] | null>([]);
 
     // UI State
     const [loading, setLoading] = useState(true);
@@ -41,6 +43,7 @@ export function TrainingPage() {
         if (!selectedCategory) {
             setEquipments([]);
             setSelectedModelGroup(null);
+            setShowFullSheet(false);
             return;
         }
 
@@ -75,7 +78,8 @@ export function TrainingPage() {
         const group = models[modelName];
         if (group && group.length > 0) {
             setSelectedModelGroup(group);
-            setGalleryIndex(0); // Reset gallery to first image
+            setGalleryIndex(0);
+            setShowFullSheet(false);
         }
     };
 
@@ -181,7 +185,7 @@ export function TrainingPage() {
                             <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-6">
                                 {modelKeys.map((modelName) => {
                                     const groupItems = models[modelName];
-                                    const coverItem = groupItems[0]; // First item as cover
+                                    const coverItem = groupItems[0];
 
                                     return (
                                         <button
@@ -196,7 +200,6 @@ export function TrainingPage() {
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90 group-hover:opacity-40 transition-opacity"></div>
 
-                                            {/* Quantity Badge */}
                                             <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/80 border border-lime-600 text-lime-400 text-[10px] font-mono font-bold rounded">
                                                 {groupItems.length} IMGS
                                             </div>
@@ -222,7 +225,6 @@ export function TrainingPage() {
                             className="modal-content max-w-[90vw] h-[90vh] bg-[#080808] border border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.2)] flex flex-col md:flex-row overflow-hidden relative animate-scale-in"
                             onClick={e => e.stopPropagation()}
                         >
-                            {/* Decorative Tech Lines */}
                             <div className="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-red-600 z-50 pointer-events-none"></div>
                             <div className="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-red-600 z-50 pointer-events-none"></div>
 
@@ -242,21 +244,20 @@ export function TrainingPage() {
                                         <>
                                             <button
                                                 onClick={handlePrevImage}
-                                                className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-lime-600/80 text-white border border-gray-700 hover:border-lime-500 rounded-full transition-all z-40"
+                                                className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-black/90 hover:bg-lime-900 border border-gray-700 hover:border-lime-500 rounded-full transition-all z-40 text-white"
                                             >
                                                 ←
                                             </button>
                                             <button
                                                 onClick={handleNextImage}
-                                                className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-black/50 hover:bg-lime-600/80 text-white border border-gray-700 hover:border-lime-500 rounded-full transition-all z-40"
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-black/90 hover:bg-lime-900 border border-gray-700 hover:border-lime-500 rounded-full transition-all z-40 text-white"
                                             >
                                                 →
                                             </button>
                                         </>
                                     )}
 
-                                    {/* Image Counter Badge */}
-                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-black/70 border border-lime-900 rounded-full text-lime-400 font-mono text-xs z-40">
+                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-black/90 border border-lime-900 rounded-full text-lime-400 font-mono text-xs z-40">
                                         IMG {galleryIndex + 1} / {selectedModelGroup.length}
                                     </div>
                                 </div>
@@ -276,7 +277,7 @@ export function TrainingPage() {
                             </div>
 
                             {/* RIGHT SIDE: INTELLIGENCE DATA */}
-                            <div className="w-full md:w-1/4 flex flex-col bg-[#111]">
+                            <div className="w-full md:w-1/4 flex flex-col bg-[#111] z-10">
                                 <div className="p-6 border-b border-[#333] bg-[#0f0f0f]">
                                     <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none break-words">
                                         {currentViewItem.name}
@@ -284,35 +285,66 @@ export function TrainingPage() {
                                     <div className="text-lime-500 font-mono text-sm mt-3 flex flex-wrap gap-4">
                                         <span>COD: {currentViewItem.code || "N/A"}</span>
                                         <span className="px-2 bg-lime-900/20 text-xs rounded border border-lime-900/50 flex items-center">
-                                            {selectedModelGroup.length} VARIAÇÕES DE IMAGEM
+                                            {selectedModelGroup.length} VARIAÇÕES
                                         </span>
                                     </div>
                                 </div>
 
                                 <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#0a0a0a]">
-                                    <h3 className="text-gray-500 font-bold uppercase text-xs tracking-widest mb-4 flex items-center gap-2">
-                                        <div className="w-2 h-2 bg-lime-500 rounded-full"></div>
-                                        Ficha Técnica (Intelligence)
-                                    </h3>
-                                    <div className="prose prose-invert prose-sm font-mono text-gray-300 leading-relaxed text-left whitespace-pre-wrap">
-                                        {currentViewItem.description ? (
-                                            currentViewItem.description
-                                        ) : (
-                                            <span className="italic text-gray-600">
-                                                {">> ACESSO NEGADO. AGUARDANDO ATUALIZAÇÃO DO BANCO DE DADOS PVO."}
-                                            </span>
-                                        )}
-                                    </div>
+                                    <TechSheet markdown={currentViewItem.description || ''} />
                                 </div>
 
-                                <div className="p-6 border-t border-[#333] bg-[#080808]">
+                                <div className="p-6 border-t border-[#333] bg-[#080808] space-y-3">
+                                    <button
+                                        onClick={() => setShowFullSheet(true)}
+                                        className="w-full py-3 bg-lime-900/20 border border-lime-900 hover:bg-lime-900/40 hover:text-white text-lime-500 font-bold uppercase tracking-widest transition-all text-xs"
+                                    >
+                                        [ + ] EXPANDIR FICHA TÉCNICA
+                                    </button>
                                     <button
                                         onClick={() => setSelectedModelGroup(null)}
-                                        className="w-full py-4 bg-[#1a1a1a] border border-[#333] hover:border-red-600 hover:text-red-500 text-gray-400 font-bold uppercase tracking-widest transition-all"
+                                        className="w-full py-3 bg-[#1a1a1a] border border-[#333] hover:border-red-600 hover:text-red-500 text-gray-400 font-bold uppercase tracking-widest transition-all text-xs"
                                     >
-                                        [ ENCERRAR ANÁLISE ]
+                                        ENCERRAR ANÁLISE
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* LEVEL 4: FULL TECH SHEET MODAL */}
+                {showFullSheet && selectedModelGroup && currentViewItem && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in" onClick={() => setShowFullSheet(false)}>
+                        <div
+                            className="bg-[#0a0a0a] border-2 border-lime-900 w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-[0_0_100px_rgba(101,163,13,0.2)] animate-scale-in"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="p-6 border-b border-lime-900/50 bg-[#0f0f0f] flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-3xl font-black italic text-white uppercase">{currentViewItem.name}</h2>
+                                    <p className="text-lime-500 font-mono text-xs mt-1">RELATÓRIO DE INTELIGÊNCIA COMPLETO</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowFullSheet(false)}
+                                    className="w-10 h-10 flex items-center justify-center border border-red-900/50 hover:bg-red-900/50 hover:text-white text-gray-500 transition-colors"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+                                <div className="max-w-3xl mx-auto bg-black/80 border border-[#333] p-8 backdrop-blur-sm">
+                                    <TechSheet markdown={currentViewItem.description || ''} />
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-4 border-t border-[#222] bg-[#050505] flex justify-between items-center text-[10px] font-mono text-gray-600 uppercase">
+                                <span>Classified // PVO Internal Use Only</span>
+                                <span>{new Date().toLocaleDateString()} // {new Date().toLocaleTimeString()}</span>
                             </div>
                         </div>
                     </div>
