@@ -315,7 +315,7 @@ export function TrainingPage() {
 
                 {/* LEVEL 4: FULL TECH SHEET MODAL */}
                 {showFullSheet && selectedModelGroup && currentViewItem && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in" onClick={() => setShowFullSheet(false)}>
+                    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in" onClick={() => setShowFullSheet(false)}>
                         <div
                             className="bg-[#0a0a0a] border-2 border-lime-900 w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-[0_0_100px_rgba(101,163,13,0.2)] animate-scale-in"
                             onClick={e => e.stopPropagation()}
