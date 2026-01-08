@@ -8,7 +8,7 @@ export function CountriesPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedContinent, setSelectedContinent] = useState<string>('');
-    const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+    const [viewMode, setViewMode] = useState<'grid' | 'map' | 'alliances'>('grid');
     const [sortBy, setSortBy] = useState<'rank' | 'budget' | 'power'>('rank');
 
     useEffect(() => {
@@ -35,6 +35,36 @@ export function CountriesPage() {
     };
 
     const getMobilizationForce = (c: Country) => (c.activeMilitary || 0) + (c.reserveMilitary || 0);
+
+    // Alliance Aggregation Logic (The "Query de Milhões")
+    const allianceStats = useMemo(() => {
+        const stats = countries.reduce((acc, country) => {
+            const alliance = country.alliance || 'Non-Aligned';
+            if (!acc[alliance]) {
+                acc[alliance] = {
+                    name: alliance,
+                    count: 0,
+                    totalBudget: 0,
+                    totalActive: 0,
+                    totalReserve: 0,
+                    rankSum: 0
+                };
+            }
+            acc[alliance].count += 1;
+            acc[alliance].totalBudget += (country.militaryBudgetUsd || 0);
+            acc[alliance].totalActive += (country.activeMilitary || 0);
+            acc[alliance].totalReserve += (country.reserveMilitary || 0);
+            acc[alliance].rankSum += (country.militaryRank || 0);
+            return acc;
+        }, {} as Record<string, any>);
+
+        return Object.values(stats).map(stat => ({
+            ...stat,
+            avgRank: stat.count > 0 ? (stat.rankSum / stat.count).toFixed(1) : 0,
+            totalForce: stat.totalActive + stat.totalReserve,
+            budgetBillions: stat.totalBudget / 1000000000
+        })).sort((a, b) => b.totalBudget - a.totalBudget);
+    }, [countries]);
 
     const filteredAndSortedCountries = useMemo(() => {
         let result = countries.filter(country => {
@@ -110,6 +140,12 @@ export function CountriesPage() {
                         >
                             <span>MAPA ESTRATÉGICO</span>
                         </button>
+                        <button
+                            onClick={() => setViewMode('alliances')}
+                            className={`px-4 py-1 flex items-center gap-2 text-xs font-mono uppercase transition-colors ${viewMode === 'alliances' ? 'bg-red-900/30 text-red-500 border border-red-900/50' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            <span>ALIANÇAS</span>
+                        </button>
                     </div>
                 </div>
 
@@ -136,47 +172,49 @@ export function CountriesPage() {
                     </div>
                 </div>
 
-                {/* Controls */}
-                <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-4 sticky top-4 z-30 shadow-xl backdrop-blur-md bg-opacity-90">
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 w-full">
-                            <label className="text-[10px] font-mono text-gray-500 uppercase mb-1 block">Busca</label>
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="PROCURAR PAÍS..."
-                                className="w-full bg-[#111] border border-[#333] text-white px-3 py-2 text-sm font-mono focus:border-red-600 focus:outline-none uppercase"
-                            />
-                        </div>
-                        <div className="w-full md:w-48">
-                            <label className="text-[10px] font-mono text-gray-500 uppercase mb-1 block">Continente</label>
-                            <select
-                                value={selectedContinent}
-                                onChange={(e) => setSelectedContinent(e.target.value)}
-                                className="w-full bg-[#111] border border-[#333] text-white px-3 py-2 text-sm font-mono focus:border-red-600 focus:outline-none uppercase"
-                            >
-                                <option value="">Global</option>
-                                {continents.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                        </div>
-                        <div className="w-full md:w-48">
-                            <label className="text-[10px] font-mono text-gray-500 uppercase mb-1 block">Ordenar Por</label>
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value as any)}
-                                className="w-full bg-[#111] border border-[#333] text-white px-3 py-2 text-sm font-mono focus:border-red-600 focus:outline-none uppercase"
-                            >
-                                <option value="rank">Ranking Militar</option>
-                                <option value="power">Força Total (Ativa+Res)</option>
-                                <option value="budget">Orçamento (USD)</option>
-                            </select>
+                {/* Controls (Hidden in Map Mode to save space, or visible?) - Visible for now */}
+                {viewMode !== 'alliances' && (
+                    <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-4 sticky top-4 z-30 shadow-xl backdrop-blur-md bg-opacity-90">
+                        <div className="flex flex-col md:flex-row gap-4 items-end">
+                            <div className="flex-1 w-full">
+                                <label className="text-[10px] font-mono text-gray-500 uppercase mb-1 block">Busca</label>
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="PROCURAR PAÍS..."
+                                    className="w-full bg-[#111] border border-[#333] text-white px-3 py-2 text-sm font-mono focus:border-red-600 focus:outline-none uppercase"
+                                />
+                            </div>
+                            <div className="w-full md:w-48">
+                                <label className="text-[10px] font-mono text-gray-500 uppercase mb-1 block">Continente</label>
+                                <select
+                                    value={selectedContinent}
+                                    onChange={(e) => setSelectedContinent(e.target.value)}
+                                    className="w-full bg-[#111] border border-[#333] text-white px-3 py-2 text-sm font-mono focus:border-red-600 focus:outline-none uppercase"
+                                >
+                                    <option value="">Global</option>
+                                    {continents.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div className="w-full md:w-48">
+                                <label className="text-[10px] font-mono text-gray-500 uppercase mb-1 block">Ordenar Por</label>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value as any)}
+                                    className="w-full bg-[#111] border border-[#333] text-white px-3 py-2 text-sm font-mono focus:border-red-600 focus:outline-none uppercase"
+                                >
+                                    <option value="rank">Ranking Militar</option>
+                                    <option value="power">Força Total (Ativa+Res)</option>
+                                    <option value="budget">Orçamento (USD)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* VIEW MODES */}
-                {viewMode === 'map' ? (
+                {viewMode === 'map' && (
                     <div className="gaming-card bg-[#050505] border border-[#333] relative overflow-hidden aspect-[16/9] md:aspect-[2/1] group">
                         {/* Map Grid / Background */}
                         <div className="absolute inset-0 opacity-20"
@@ -223,7 +261,89 @@ export function CountriesPage() {
                             );
                         })}
                     </div>
-                ) : (
+                )}
+
+                {viewMode === 'alliances' && (
+                    <div className="space-y-6">
+                        <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-6 animate-fade-in">
+                            <h3 className="text-2xl font-black text-white uppercase italic mb-6">Analise de Alianças <span className="text-red-600">//</span> POWER BLOCS</h3>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left font-mono">
+                                    <thead>
+                                        <tr className="border-b-2 border-red-900 text-xs text-red-500 uppercase tracking-widest">
+                                            <th className="py-2">Aliança / Bloco</th>
+                                            <th className="py-2 text-center">Nº Países</th>
+                                            <th className="py-2 text-right">Orçamento (Bi USD)</th>
+                                            <th className="py-2 text-right">Rank Médio</th>
+                                            <th className="py-2 text-right">Força Total (M)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {allianceStats.map((stat, idx) => (
+                                            <tr key={stat.name} className="border-b border-[#222] hover:bg-[#111] transition-colors group">
+                                                <td className="py-4 font-bold text-white text-lg uppercase flex items-center gap-2">
+                                                    <span className="text-gray-600 text-xs">#{idx + 1}</span>
+                                                    {stat.name}
+                                                    {stat.name === 'NATO' && <span className="text-[10px] bg-blue-900 text-blue-200 px-1 rounded">BLUE</span>}
+                                                    {stat.name === 'BRICS+' && <span className="text-[10px] bg-red-900 text-red-200 px-1 rounded">RED</span>}
+                                                </td>
+                                                <td className="py-4 text-center text-gray-400">{stat.count}</td>
+                                                <td className="py-4 text-right text-lime-500 font-bold">${(stat.budgetBillions || 0).toFixed(1)}B</td>
+                                                <td className="py-4 text-right text-gray-300">{stat.avgRank}</td>
+                                                <td className="py-4 text-right text-white font-bold">{formatNumber(stat.totalForce)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Visual Comparison Charts (Mock style with Divs) */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="gaming-card bg-black border border-[#333] p-6">
+                                <h4 className="text-xs font-mono text-gray-500 uppercase mb-4">Participação no Orçamento Global</h4>
+                                <div className="space-y-4">
+                                    {allianceStats.map(stat => (
+                                        <div key={stat.name}>
+                                            <div className="flex justify-between text-xs mb-1 uppercase font-bold">
+                                                <span className="text-gray-300">{stat.name}</span>
+                                                <span className="text-lime-500">{(stat.budgetBillions / (totalBudget / 1000000000) * 100).toFixed(1)}%</span>
+                                            </div>
+                                            <div className="h-2 bg-[#222] rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-lime-600"
+                                                    style={{ width: `${(stat.budgetBillions / (totalBudget / 1000000000) * 100)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="gaming-card bg-black border border-[#333] p-6">
+                                <h4 className="text-xs font-mono text-gray-500 uppercase mb-4">Concentração de Força Humana</h4>
+                                <div className="space-y-4">
+                                    {allianceStats.map(stat => (
+                                        <div key={stat.name}>
+                                            <div className="flex justify-between text-xs mb-1 uppercase font-bold">
+                                                <span className="text-gray-300">{stat.name}</span>
+                                                <span className="text-white">{(stat.totalForce / (totalActive + totalReserve) * 100).toFixed(1)}%</span>
+                                            </div>
+                                            <div className="h-2 bg-[#222] rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-red-600"
+                                                    style={{ width: `${(stat.totalForce / (totalActive + totalReserve) * 100)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {viewMode === 'grid' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredAndSortedCountries.map((country, index) => (
                             <Link

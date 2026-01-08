@@ -92,12 +92,13 @@ export function CountryDetailsPage() {
                 </div>
 
                 {/* Status Grid - Intelligence Data */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {/* Status Grid - Intelligence Data */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
-                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Total de Ativos</div>
-                        <div className="text-xl md:text-2xl font-black text-white">{formatNumber(stats?.totalEquipment)}</div>
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Global Rank</div>
+                        <div className="text-xl md:text-3xl font-black text-white">#{country.militaryRank}</div>
                         <div className="absolute bottom-0 right-0 w-8 h-8 opacity-20 group-hover:opacity-40 transition-opacity">
-                            <div className="w-full h-full border-b-2 border-r-2 border-red-600"></div>
+                            <div className="w-full h-full border-b-2 border-r-2 border-white"></div>
                         </div>
                     </div>
 
@@ -107,8 +108,8 @@ export function CountryDetailsPage() {
                     </div>
 
                     <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
-                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">População</div>
-                        <div className="text-xl md:text-2xl font-black text-white">{(country.population ? (country.population / 1000000).toFixed(1) + 'M' : '-')}</div>
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Reserva</div>
+                        <div className="text-xl md:text-2xl font-black text-gray-400">{formatNumber(country.reserveMilitary)}</div>
                     </div>
 
                     <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
@@ -117,8 +118,15 @@ export function CountryDetailsPage() {
                     </div>
 
                     <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
-                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Área (km²)</div>
-                        <div className="text-xl md:text-2xl font-black text-white">{formatNumber(country.areaKm2)}</div>
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">População</div>
+                        <div className="text-xl md:text-2xl font-black text-white">{(country.population ? (country.population / 1000000).toFixed(1) + 'M' : '-')}</div>
+                    </div>
+
+                    <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Idiomas</div>
+                        <div className="text-xs md:text-sm font-bold text-white leading-tight mt-1">
+                            {Array.isArray(country.languages) ? country.languages.join(', ') : country.languages || '-'}
+                        </div>
                     </div>
                 </div>
 
@@ -208,8 +216,24 @@ export function CountryDetailsPage() {
 
                             {/* RIGHT: DATA */}
                             <div className="w-full md:w-1/3 bg-[#0f0f0f] lex flex-col flex">
-                                <div className="p-6 border-b border-[#222] bg-[#111] flex justify-between items-center">
-                                    <span className="text-xs font-mono text-gray-500 uppercase tracking-widest">FICHA TÉCNICA</span>
+                                <div className="p-6 border-b border-[#222] bg-[#111] flex justify-between items-start">
+                                    <div>
+                                        <span className="text-xs font-mono text-gray-500 uppercase tracking-widest block mb-2">FICHA TÉCNICA</span>
+                                        <div className="grid grid-cols-2 gap-4 text-[10px] font-mono text-gray-400">
+                                            <div>
+                                                <span className="text-red-500 block">FABRICANTE</span>
+                                                {selectedEquipment.manufacturer || 'Desconhecido'}
+                                            </div>
+                                            <div>
+                                                <span className="text-red-500 block">ANO</span>
+                                                {selectedEquipment.year || 'N/A'}
+                                            </div>
+                                            <div className="col-span-2">
+                                                <span className="text-red-500 block">ORIGEM</span>
+                                                {selectedEquipment.origin || 'Desconhecida'}
+                                            </div>
+                                        </div>
+                                    </div>
                                     <button
                                         onClick={() => setSelectedEquipment(null)}
                                         className="w-8 h-8 flex items-center justify-center border border-red-900/50 hover:bg-red-900 text-gray-500 hover:text-white transition-colors"

@@ -83,7 +83,10 @@ export const countryService = {
                     image_path,
                     category:category_id (
                         name
-                    )
+                    ),
+                    manufacturer,
+                    year,
+                    country
                 )
             `)
             .eq('country_id', countryId);
@@ -98,10 +101,13 @@ export const countryService = {
             name: item.equipment.name,
             code: item.equipment.code,
             description: item.equipment.description,
-            imageUrl: item.equipment.image_path, // Correct mapping from snake_case
+            imageUrl: item.equipment.image_path,
             categoryName: item.equipment.category?.name || 'Unknown',
             quantity: item.quantity,
-            status: item.status
+            status: item.status,
+            manufacturer: item.equipment.manufacturer,
+            year: item.equipment.year,
+            origin: item.equipment.country
         }));
     },
 
