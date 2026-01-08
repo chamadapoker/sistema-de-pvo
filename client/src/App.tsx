@@ -34,8 +34,16 @@ function ProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role as any)) {
-    // Redirect to appropriate dashboard based on role
+  // If role is allowed for this route, render content
+  if (allowedRoles && user && allowedRoles.includes(user.role as any)) {
+    return <>{children}</>;
+  }
+
+  // If user role is NOT in allowed roles for this route:
+  if (allowedRoles && user) {
+    // If user is Admin/Instructor try to access student page, DENY unless specific override (handled above)
+    // But wait, the logic above already handles ALLOW. So here is DENY.
+    // Redirect to appropriate dashboard based on ACTUAL role
     if (user.role === 'ADMIN' || user.role === 'INSTRUCTOR') {
       return <Navigate to="/instructor/dashboard" replace />;
     }
@@ -71,11 +79,11 @@ function App() {
           <Route path="/" element={getDefaultRedirect()} />
           <Route path="/dashboard" element={getDefaultRedirect()} />
 
-          {/* Student Routes - Only for STUDENT role */}
+          {/* Student Routes - ACCESSIBLE BY ALL ROLES now (for View as Student) */}
           <Route
             path="/student/dashboard"
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <StudentDashboard />
               </ProtectedRoute>
             }
@@ -83,7 +91,7 @@ function App() {
           <Route
             path="/student/training"
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <TrainingPage />
               </ProtectedRoute>
             }
@@ -91,7 +99,7 @@ function App() {
           <Route
             path="/student/flashcards"
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <FlashcardPage />
               </ProtectedRoute>
             }
@@ -99,7 +107,7 @@ function App() {
           <Route
             path="/student/test"
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <TestPage />
               </ProtectedRoute>
             }
@@ -107,7 +115,7 @@ function App() {
           <Route
             path="/student/test/:testId"
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <TakeTestPage />
               </ProtectedRoute>
             }
@@ -115,7 +123,7 @@ function App() {
           <Route
             path="/student/results"
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <ResultsPage />
               </ProtectedRoute>
             }
@@ -123,7 +131,7 @@ function App() {
           <Route
             path="/student/countries"
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <CountriesPage />
               </ProtectedRoute>
             }
@@ -131,7 +139,7 @@ function App() {
           <Route
             path="/student/countries/:countryId"
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <CountryDetailsPage />
               </ProtectedRoute>
             }

@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 // Ícones SVG inline para evitar dependências externas quebradas
@@ -9,13 +9,14 @@ const Icons = {
     Menu: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>,
     Home: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>,
     Target: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
-    Cards: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>,
+    Cards: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>,
     Exam: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>,
     Stats: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>,
     Settings: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>,
     Globe: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>,
     Document: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>,
-    LogOut: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+    LogOut: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
+    Eye: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 };
 
 interface DashboardLayoutProps {
@@ -25,11 +26,28 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const { user, clearAuth } = useAuthStore();
 
-    // Menu dinâmico baseado no role do usuário
+    // Determine current view mode (Instructor vs Student)
+    const isInstructorOrAdmin = user?.role === 'INSTRUCTOR' || user?.role === 'ADMIN';
+    const isStudentPath = location.pathname.startsWith('/student');
+
+    // Menu construction
     const getMenuItems = () => {
-        if (user?.role === 'INSTRUCTOR' || user?.role === 'ADMIN') {
+        // If Instructor/Admin is viewing as student, show student menu
+        if (isInstructorOrAdmin && isStudentPath) {
+            return [
+                { path: '/student/dashboard', label: 'Dashboard', icon: Icons.Home },
+                { path: '/student/training', label: 'Baterias', icon: Icons.Target },
+                { path: '/student/flashcards', label: 'Flashcards', icon: Icons.Cards },
+                { path: '/student/countries', label: 'Países', icon: Icons.Globe },
+                { path: '/student/test', label: 'Avaliação', icon: Icons.Exam },
+                { path: '/student/results', label: 'Histórico', icon: Icons.Stats },
+            ];
+        }
+
+        if (isInstructorOrAdmin) {
             return [
                 { path: '/instructor/dashboard', label: 'Dashboard', icon: Icons.Home },
                 { path: '/instructor/equipment', label: 'Equipamentos', icon: Icons.Settings },
@@ -37,7 +55,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 { path: '/instructor/student-results', label: 'Resultados', icon: Icons.Stats },
             ];
         }
-        // Student menu
+
+        // Regular Student
         return [
             { path: '/student/dashboard', label: 'Dashboard', icon: Icons.Home },
             { path: '/student/training', label: 'Baterias', icon: Icons.Target },
@@ -58,8 +77,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
     return (
         <div className="min-h-screen bg-[#050505] text-[#E5E5E5] flex">
+
+            {/* INSTRUCTOR OVERLAY (View as Student Mode) */}
+            {isInstructorOrAdmin && isStudentPath && (
+                <div className="fixed top-0 left-0 right-0 h-8 bg-red-600 z-[100] flex items-center justify-center text-white text-xs font-black tracking-widest uppercase shadow-lg">
+                    <span>⚠️ MODO DE VISUALIZAÇÃO: ALUNO</span>
+                    <button
+                        onClick={() => navigate('/instructor/dashboard')}
+                        className="ml-4 bg-black/30 hover:bg-black/50 px-3 py-0.5 rounded border border-white/20 transition-colors"
+                    >
+                        RETORNAR AO PAINEL
+                    </button>
+                </div>
+            )}
+
             {/* Mobile Header */}
-            <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-[#121212] border-b border-[#333] z-50 flex items-center justify-between px-4">
+            <div className={`lg:hidden fixed left-0 right-0 h-16 bg-[#121212] border-b border-[#333] z-50 flex items-center justify-between px-4 ${isInstructorOrAdmin && isStudentPath ? 'top-8' : 'top-0'}`}>
                 <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white hover:text-red-500">
                     <Icons.Menu />
                 </button>
@@ -80,8 +113,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Sidebar Container */}
             <aside className={`
-                fixed lg:sticky top-0 left-0 h-screen w-64 bg-[#0a0a0a] border-r border-[#333] z-50 transform transition-transform duration-300 ease-in-out flex flex-col
+                fixed lg:sticky left-0 h-screen w-64 bg-[#0a0a0a] border-r border-[#333] z-50 transform transition-transform duration-300 ease-in-out flex flex-col
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                ${isInstructorOrAdmin && isStudentPath ? 'top-8 h-[calc(100vh-2rem)]' : 'top-0'}
             `}>
                 {/* Logo Area */}
                 <div className="h-20 flex items-center justify-center border-b border-[#222]">
@@ -106,6 +140,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                 {/* Navigation */}
                 <nav className="flex-1 py-6 space-y-1 overflow-y-auto">
+                    {/* View Switch Button for Instructors */}
+                    {isInstructorOrAdmin && !isStudentPath && (
+                        <div className="px-4 mb-4">
+                            <button
+                                onClick={() => navigate('/student/dashboard')}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#111] border border-[#333] hover:border-red-600 text-white text-xs font-bold uppercase transition-all group"
+                            >
+                                <Icons.Eye />
+                                <span className="group-hover:text-red-600">Ver como Aluno</span>
+                            </button>
+                        </div>
+                    )}
+
                     {menuItems.map((item) => (
                         <Link
                             key={item.path}
@@ -135,8 +182,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 min-w-0 pt-16 lg:pt-0">
-                <div className="max-w-7xl mx-auto p-4 lg:p-8 animate-fade-in">
+            <main className={`flex-1 min-w-0 ${isInstructorOrAdmin && isStudentPath ? 'pt-8' : ''}`}>
+                <div className="pt-16 lg:pt-0 max-w-7xl mx-auto p-4 lg:p-8 animate-fade-in">
                     {children}
                 </div>
             </main>
