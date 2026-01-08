@@ -183,7 +183,7 @@ export function CountryDetailsPage() {
                             </div>
 
                             <div className="absolute bottom-0 left-0 w-full p-4">
-                                <div className="text-lime-500 text-[10px] font-mono mb-1">{item.code}</div>
+                                { /* Correctly Removed Code Display */}
                                 <h4 className="font-black text-white text-sm italic uppercase leading-tight group-hover:text-lime-400 transition-colors">
                                     {item.name}
                                 </h4>

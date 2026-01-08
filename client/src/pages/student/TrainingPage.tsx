@@ -205,7 +205,7 @@ export function TrainingPage() {
                                             </div>
 
                                             <div className="absolute bottom-0 left-0 w-full p-4">
-                                                <div className="text-lime-500 text-[10px] font-mono mb-1">{coverItem.code}</div>
+                                                { /* Correctly Removed Code Display */}
                                                 <h4 className="font-black text-white text-lg italic uppercase leading-tight group-hover:text-lime-400 transition-colors">
                                                     {modelName}
                                                 </h4>
@@ -283,7 +283,7 @@ export function TrainingPage() {
                                         {currentViewItem.name}
                                     </h2>
                                     <div className="text-lime-500 font-mono text-sm mt-3 flex flex-wrap gap-4">
-                                        <span>COD: {currentViewItem.code || "N/A"}</span>
+                                        { /* Removed Code Display */}
                                         <span className="px-2 bg-lime-900/20 text-xs rounded border border-lime-900/50 flex items-center">
                                             {selectedModelGroup.length} VARIAÇÕES
                                         </span>
