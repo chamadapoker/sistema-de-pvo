@@ -17,6 +17,7 @@ import { TestManagement } from './pages/instructor/TestManagement';
 import { CreateTestPage } from './pages/instructor/CreateTestPage';
 import { CorrectTestPage } from './pages/instructor/CorrectTestPage';
 import { StudentResultsPage } from './pages/instructor/StudentResultsPage';
+import { UserManagementPage } from './pages/admin/UserManagementPage';
 
 const queryClient = new QueryClient();
 
@@ -141,6 +142,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR', 'ADMIN']}>
                 <CountryDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin Routes */}
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <UserManagementPage />
               </ProtectedRoute>
             }
           />

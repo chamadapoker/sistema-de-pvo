@@ -16,7 +16,8 @@ const Icons = {
     Globe: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>,
     Document: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>,
     LogOut: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
-    Eye: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+    Eye: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
+    Users: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
 };
 
 interface DashboardLayoutProps {
@@ -48,12 +49,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         }
 
         if (isInstructorOrAdmin) {
-            return [
+            const items = [
                 { path: '/instructor/dashboard', label: 'Dashboard', icon: Icons.Home },
                 { path: '/instructor/equipment', label: 'Equipamentos', icon: Icons.Settings },
+            ];
+
+            if (user?.role === 'ADMIN') {
+                items.push({ path: '/admin/users', label: 'Efetivo', icon: Icons.Users });
+            }
+
+            items.push(
                 { path: '/instructor/tests', label: 'Testes', icon: Icons.Document },
                 { path: '/instructor/student-results', label: 'Resultados', icon: Icons.Stats },
-            ];
+            );
+
+            return items;
         }
 
         // Regular Student
@@ -132,7 +142,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             <span className="text-red-600 font-bold text-sm">{user?.name?.[0]?.toUpperCase()}</span>
                         </div>
                         <div>
-                            <p className="text-sm font-bold text-white">{user?.name}</p>
+                            <p className="text-sm font-bold text-white max-w-[150px] truncate" title={user?.name}>{user?.name}</p>
                             <p className="text-xs text-gray-500 font-mono uppercase">{user?.role}</p>
                         </div>
                     </div>
