@@ -30,7 +30,7 @@ export function TestPage() {
         try {
             const canTake = await testService.canStudentTakeTest(testId);
             if (!canTake) {
-                alert('Você não tem permissão para realizar esta prova no momento (já finalizada ou fora do horário).');
+                alert('Esta prova ainda não está liberada para execução (aguarde o horário agendado).');
                 return;
             }
             navigate(`/student/test/${testId}`);
@@ -73,20 +73,32 @@ export function TestPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {tests.map(test => {
-                            // MOCKED STATUS for local dev - Ideally check 'status' column from DB
-                            const isActive = true;
-                            const scheduledDate = new Date(test.createdAt || Date.now());
+                            const now = new Date();
+                            // If scheduled_at exists, use it. Otherwise assume available.
+                            const scheduledDate = test.scheduled_at ? new Date(test.scheduled_at) : null;
+                            const isFuture = scheduledDate ? scheduledDate > now : false;
+
+                            // Status Display Logic
+                            let statusText = 'DISPONÍVEL';
+                            let canStart = true;
+
+                            if (isFuture && scheduledDate) {
+                                statusText = `AGENDADA: ${scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                                canStart = false;
+                            }
 
                             return (
-                                <div key={test.id} className={`gaming-card p-6 border-2 flex flex-col justify-between ${isActive ? 'bg-gradient-to-br from-red-900/10 to-black border-red-900/50' : 'bg-[#0a0a0a] border-[#333] opacity-70'}`}>
+                                <div key={test.id} className={`gaming-card p-6 border-2 flex flex-col justify-between ${canStart ? 'bg-gradient-to-br from-red-900/10 to-black border-red-900/50' : 'bg-[#0a0a0a] border-[#333] opacity-70'}`}>
                                     <div>
                                         <div className="flex justify-between items-start mb-4">
-                                            <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-widest border ${isActive ? 'bg-red-600 text-white border-red-600' : 'bg-[#111] text-gray-500 border-[#333]'}`}>
-                                                {isActive ? 'DISPONÍVEL' : 'AGENDADA'}
+                                            <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-widest border ${canStart ? 'bg-red-600 text-white border-red-600' : 'bg-[#111] text-yellow-500 border-yellow-900'}`}>
+                                                {statusText}
                                             </span>
-                                            <span className="text-xs font-mono text-gray-500">
-                                                {scheduledDate.toLocaleDateString('pt-BR')}
-                                            </span>
+                                            {scheduledDate && (
+                                                <span className="text-xs font-mono text-gray-500">
+                                                    {scheduledDate.toLocaleDateString('pt-BR')}
+                                                </span>
+                                            )}
                                         </div>
 
                                         <h3 className="text-xl font-black italic text-white uppercase mb-2 leading-tight">{test.name}</h3>
@@ -111,14 +123,14 @@ export function TestPage() {
                                     </div>
 
                                     <button
-                                        onClick={() => isActive && handleStartTest(test.id)}
-                                        disabled={!isActive}
-                                        className={`w-full py-3 font-black uppercase tracking-widest text-sm transition-all ${isActive
+                                        onClick={() => canStart && handleStartTest(test.id)}
+                                        disabled={!canStart}
+                                        className={`w-full py-3 font-black uppercase tracking-widest text-sm transition-all ${canStart
                                             ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]'
                                             : 'bg-[#1a1a1a] text-gray-500 cursor-not-allowed border border-[#333]'
                                             }`}
                                     >
-                                        {isActive ? 'INICIAR MISSÃO' : 'AGUARDANDO LIBERAÇÃO'}
+                                        {canStart ? 'INICIAR MISSÃO' : 'AGUARDANDO HORÁRIO'}
                                     </button>
                                 </div>
                             );

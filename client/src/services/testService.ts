@@ -9,6 +9,7 @@ export interface ScheduledTest {
     creatorId: string;
     createdAt: string;
     updatedAt: string;
+    scheduled_at?: string; // Added field
     questions?: any[];
 }
 
@@ -225,7 +226,8 @@ export const testService = {
                     creator_id: user?.id,
                     location: testData.location,
                     category_id: testData.category_id,
-                    status: 'SCHEDULED'
+                    status: 'SCHEDULED',
+                    scheduled_at: testData.scheduled_date ? new Date(testData.scheduled_date).toISOString() : null
                 })
                 .select()
                 .single();
@@ -296,7 +298,6 @@ export const testService = {
             .order('score', { ascending: false });
 
         if (error && error.code !== 'PGRST116') {
-            // Fallback if users table relation issue
             const { data: fallback } = await supabase
                 .from('test_attempts')
                 .select('*')
@@ -330,16 +331,45 @@ export const testService = {
         return data || [];
     },
 
+    // Check if student can take test (New Method)
+    async canStudentTakeTest(testId: string): Promise<boolean> {
+        try {
+            const { data, error } = await supabase
+                .from('tests')
+                .select('scheduled_at, status')
+                .eq('id', testId)
+                .single();
+
+            if (error) throw error;
+
+            // If finished, cannot take
+            if (data.status === 'FINISHED') return false;
+
+            // If scheduled date is in future, cannot take
+            if (data.scheduled_at) {
+                const scheduledTime = new Date(data.scheduled_at).getTime();
+                const now = new Date().getTime();
+                if (scheduledTime > now) return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error checking test permission:', error);
+            return false;
+        }
+    },
+
     // ---- REAL IMPLEMENTATIONS FOR CORRECTION WORKFLOW ----
 
     async getTestsNeedingCorrection(): Promise<any[]> {
         const { data: tests, error } = await supabase
             .from('tests')
             .select('id, name, created_at')
-            .eq('status', 'ACTIVE');
+            .eq('status', 'ACTIVE'); // Or SCHEDULED if active
 
         if (error) throw error;
 
+        // Note: Logic simplified for brevity, real world would be more complex
         const results = await Promise.all(tests.map(async (test: any) => {
             const { data: attempts } = await supabase
                 .from('test_attempts')
