@@ -48,7 +48,7 @@ export function TakeTestPage() {
             const testData = await testService.getTest(testId!);
             setTest(testData);
 
-            if (!testData.name) { // is_active property missing on type, using mock logic
+            if (!testData.name) {
                 // Mock active check for development
                 const isActive = true;
                 if (!isActive) {
@@ -61,19 +61,23 @@ export function TakeTestPage() {
             const questionsData = await testService.getTestQuestions(testId!);
             setQuestions(questionsData);
 
-            // Carregar dados dos equipamentos
+            // Carregar somente equipamentos das questões (Paralelo)
             const equipMap = new Map();
-            for (const q of questionsData) {
+            const equipmentPromises = questionsData.map(async (q) => {
                 try {
-                    const { equipment } = await equipmentService.getAllEquipment();
-                    const equip = equipment.find(e => e.id === q.equipment_id);
-                    if (equip) {
-                        equipMap.set(q.equipment_id, equip);
-                    }
-                } catch (error) {
-                    console.error('Error loading equipment:', error);
+                    const { equipment } = await equipmentService.getEquipmentById(q.equipment_id);
+                    return { id: q.equipment_id, data: equipment };
+                } catch (err) {
+                    console.error(`Erro ao carregar equipamento ${q.equipment_id}`, err);
+                    return null;
                 }
-            }
+            });
+
+            const results = await Promise.all(equipmentPromises);
+            results.forEach(res => {
+                if (res) equipMap.set(res.id, res.data);
+            });
+
             setEquipmentData(equipMap);
 
             setState('READY');
