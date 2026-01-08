@@ -30,10 +30,35 @@ function ProtectedRoute({
   children: React.ReactNode;
   allowedRoles?: ('ADMIN' | 'INSTRUCTOR' | 'STUDENT')[];
 }) {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Security Checks
+  if (user) {
+    // 1. Blocked Check
+    if (user.blocked) {
+      logout();
+      alert("Sua conta foi temporariamente suspensa pelo Comando.");
+      return <Navigate to="/login" replace />;
+    }
+
+    // 2. Expiration Check
+    if (user.accessUntil) {
+      const expiryDate = new Date(user.accessUntil);
+      const today = new Date();
+      // Reset time to start of day for fair comparison
+      today.setHours(0, 0, 0, 0);
+
+      // If today is AFTER expiry date
+      if (today > expiryDate) {
+        logout();
+        alert("Seu período de acesso expirou.");
+        return <Navigate to="/login" replace />;
+      }
+    }
   }
 
   // If role is allowed for this route, render content
