@@ -10,6 +10,16 @@ export function UserManagementPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Create User Modal State
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [createFormData, setCreateFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'STUDENT' as Role
+    });
+    const [creating, setCreating] = useState(false);
+
     useEffect(() => {
         loadUsers();
     }, []);
@@ -20,7 +30,6 @@ export function UserManagementPage() {
             setUsers(data);
         } catch (error) {
             console.error('Error loading users:', error);
-            // alert('Erro ao carregar usuários. Verifique se você é Admin.');
         } finally {
             setLoading(false);
         }
@@ -31,10 +40,31 @@ export function UserManagementPage() {
 
         try {
             await userService.updateUserRole(userId, newRole);
-            // Optimistic update or reload
             loadUsers();
         } catch (error: any) {
             alert('Erro ao atualizar permissão: ' + error.message);
+        }
+    };
+
+    const handleCreateUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCreating(true);
+        try {
+            if (createFormData.password.length < 6) {
+                alert("A senha deve ter no mínimo 6 caracteres.");
+                setCreating(false);
+                return;
+            }
+
+            await userService.createUser(createFormData);
+            alert("Usuário criado com sucesso!");
+            setIsCreateModalOpen(false);
+            setCreateFormData({ name: '', email: '', password: '', role: 'STUDENT' });
+            loadUsers();
+        } catch (error: any) {
+            alert("Erro ao criar usuário: " + error.message);
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -69,9 +99,17 @@ export function UserManagementPage() {
                             Gerenciamento de Patentes e Acessos
                         </p>
                     </div>
-                    <div className="bg-[#111] px-4 py-2 border border-[#333]">
-                        <span className="text-xs text-gray-500 font-mono uppercase">Total de Efetivo: </span>
-                        <span className="text-white font-bold">{users.length}</span>
+                    <div className="flex gap-4 items-center">
+                        <div className="bg-[#111] px-4 py-2 border border-[#333]">
+                            <span className="text-xs text-gray-500 font-mono uppercase">Total de Efetivo: </span>
+                            <span className="text-white font-bold">{users.length}</span>
+                        </div>
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="btn-gaming bg-red-700 hover:bg-red-600 border-red-500"
+                        >
+                            + Novo Usuário
+                        </button>
                     </div>
                 </div>
 
@@ -80,7 +118,7 @@ export function UserManagementPage() {
                     <input
                         type="text"
                         placeholder="BUSCAR POR NOME, EMAIL..."
-                        className="w-full bg-[#111] border border-[#333] px-4 py-2 text-white font-mono focus:border-red-600 focus:outline-none"
+                        className="w-full bg-[#111] border border-[#333] px-4 py-2 text-white font-mono focus:border-red-600 focus:outline-none uppercase"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
@@ -143,6 +181,79 @@ export function UserManagementPage() {
                         ))
                     )}
                 </div>
+
+                {/* Create Modal */}
+                {isCreateModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="bg-[#0f0f0f] border-2 border-red-900 w-full max-w-md p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)] animate-scale-in">
+                            <h2 className="text-2xl font-black italic text-white uppercase border-b border-red-900/30 pb-4 mb-6">
+                                Adicionar Novo Usuário
+                            </h2>
+                            <form onSubmit={handleCreateUser} className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-mono text-gray-500 uppercase">Nome Completo (Patente)</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        className="w-full bg-[#0a0a0a] border border-[#333] p-3 text-white focus:border-red-600 focus:outline-none uppercase font-bold"
+                                        value={createFormData.name}
+                                        onChange={e => setCreateFormData({ ...createFormData, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-mono text-gray-500 uppercase">Email (Login)</label>
+                                    <input
+                                        required
+                                        type="email"
+                                        className="w-full bg-[#0a0a0a] border border-[#333] p-3 text-white focus:border-red-600 focus:outline-none font-mono"
+                                        value={createFormData.email}
+                                        onChange={e => setCreateFormData({ ...createFormData, email: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-mono text-gray-500 uppercase">Senha Provisória</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        className="w-full bg-[#0a0a0a] border border-[#333] p-3 text-white focus:border-red-600 focus:outline-none font-mono tracking-widest"
+                                        value={createFormData.password}
+                                        onChange={e => setCreateFormData({ ...createFormData, password: e.target.value })}
+                                        placeholder="Mínimo 6 caracteres"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-mono text-gray-500 uppercase">Nível de Acesso</label>
+                                    <select
+                                        className="w-full bg-[#0a0a0a] border border-[#333] p-3 text-white focus:border-red-600 focus:outline-none font-mono uppercase"
+                                        value={createFormData.role}
+                                        onChange={e => setCreateFormData({ ...createFormData, role: e.target.value as Role })}
+                                    >
+                                        <option value="STUDENT">CADETE (ALUNO)</option>
+                                        <option value="INSTRUCTOR">INSTRUTOR</option>
+                                        <option value="ADMIN">COMANDANTE (ADMIN)</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t border-[#333] mt-6">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCreateModalOpen(false)}
+                                        className="px-4 py-2 text-gray-500 hover:text-white font-mono uppercase text-sm"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={creating}
+                                        className="btn-gaming bg-red-700 hover:bg-red-600 border-red-500"
+                                    >
+                                        {creating ? 'Processando...' : 'Criar Conta'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );
