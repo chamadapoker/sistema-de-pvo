@@ -46,8 +46,8 @@ export function CountriesPage() {
             <DashboardLayout>
                 <div className="flex items-center justify-center min-h-[60vh]">
                     <div className="text-center">
-                        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-gray-400 font-mono">Carregando países...</p>
+                        <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-gray-400 font-mono tracking-widest uppercase">Carregando dados globais...</p>
                     </div>
                 </div>
             </DashboardLayout>
@@ -56,7 +56,7 @@ export function CountriesPage() {
 
     return (
         <DashboardLayout>
-            <div className="space-y-8 animate-fade-in">
+            <div className="space-y-8 animate-fade-in pb-20">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-red-900/30 pb-4">
                     <div>
@@ -68,38 +68,38 @@ export function CountriesPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-4 gap-6">
-                    <div className="gaming-card bg-black border border-[#333] p-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="gaming-card bg-black border border-[#333] p-6 hover:border-red-600 transition-colors">
                         <div className="text-3xl font-black text-white mb-1">{countries.length}</div>
-                        <div className="w-8 h-1 bg-blue-600 mb-3"></div>
+                        <div className="w-8 h-1 bg-red-600 mb-3"></div>
                         <div className="text-xs text-gray-400 font-mono uppercase tracking-widest">Países Mapeados</div>
                     </div>
-                    <div className="gaming-card bg-black border border-[#333] p-6">
+                    <div className="gaming-card bg-black border border-[#333] p-6 hover:border-red-600 transition-colors">
                         <div className="text-3xl font-black text-white mb-1">
-                            {formatNumber(countries.reduce((sum, c) => sum + (c.active_military || 0), 0))}
+                            {formatNumber(countries.reduce((sum, c) => sum + (c.activeMilitary || 0), 0))}
                         </div>
                         <div className="w-8 h-1 bg-red-600 mb-3"></div>
                         <div className="text-xs text-gray-400 font-mono uppercase tracking-widest">Força Ativa Global</div>
                     </div>
-                    <div className="gaming-card bg-black border border-[#333] p-6">
+                    <div className="gaming-card bg-black border border-[#333] p-6 hover:border-red-600 transition-colors">
                         <div className="text-3xl font-black text-white mb-1">
-                            ${formatNumber(countries.reduce((sum, c) => sum + (c.military_budget_usd || 0), 0))}
+                            ${formatNumber(countries.reduce((sum, c) => sum + (c.militaryBudgetUsd || 0), 0))}
                         </div>
-                        <div className="w-8 h-1 bg-green-600 mb-3"></div>
+                        <div className="w-8 h-1 bg-lime-600 mb-3"></div>
                         <div className="text-xs text-gray-400 font-mono uppercase tracking-widest">Orçamento Total</div>
                     </div>
-                    <div className="gaming-card bg-black border border-[#333] p-6">
+                    <div className="gaming-card bg-black border border-[#333] p-6 hover:border-red-600 transition-colors">
                         <div className="text-3xl font-black text-white mb-1">{continents.length}</div>
-                        <div className="w-8 h-1 bg-purple-600 mb-3"></div>
+                        <div className="w-8 h-1 bg-gray-600 mb-3"></div>
                         <div className="text-xs text-gray-400 font-mono uppercase tracking-widest">Continentes</div>
                     </div>
                 </div>
 
                 {/* Filters */}
                 <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-6">
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-xs font-mono uppercase text-gray-500 mb-2">
+                            <label className="block text-xs font-mono uppercase text-lime-500 mb-2">
                                 🔍 Buscar País
                             </label>
                             <input
@@ -107,17 +107,17 @@ export function CountriesPage() {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Digite o nome ou código..."
-                                className="w-full bg-[#111] border-2 border-[#333] text-white px-4 py-3 font-mono focus:border-blue-600 focus:outline-none"
+                                className="w-full bg-[#111] border border-[#333] text-white px-4 py-3 font-mono focus:border-red-600 focus:outline-none placeholder-gray-700 uppercase"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-mono uppercase text-gray-500 mb-2">
+                            <label className="block text-xs font-mono uppercase text-lime-500 mb-2">
                                 🌍 Filtrar por Continente
                             </label>
                             <select
                                 value={selectedContinent}
                                 onChange={(e) => setSelectedContinent(e.target.value)}
-                                className="w-full bg-[#111] border-2 border-[#333] text-white px-4 py-3 font-mono focus:border-blue-600 focus:outline-none"
+                                className="w-full bg-[#111] border border-[#333] text-white px-4 py-3 font-mono focus:border-red-600 focus:outline-none uppercase"
                             >
                                 <option value="">Todos os Continentes</option>
                                 {continents.map(continent => (
@@ -126,8 +126,8 @@ export function CountriesPage() {
                             </select>
                         </div>
                     </div>
-                    <div className="mt-4 text-sm text-gray-500 font-mono">
-                        {filteredCountries.length} {filteredCountries.length === 1 ? 'país encontrado' : 'países encontrados'}
+                    <div className="mt-4 text-xs text-gray-600 font-mono uppercase tracking-widest border-t border-[#222] pt-3">
+                        {filteredCountries.length} {filteredCountries.length === 1 ? 'nação encontrada' : 'nações encontradas'}
                     </div>
                 </div>
 
@@ -137,61 +137,62 @@ export function CountriesPage() {
                         <Link
                             key={country.id}
                             to={`/student/countries/${country.id}`}
-                            className="gaming-card bg-[#0a0a0a] border-2 border-[#333] hover:border-blue-600 transition-all group overflow-hidden"
+                            className="gaming-card bg-[#0a0a0a] border border-[#333] hover:border-red-600 transition-all group overflow-hidden"
                         >
                             {/* Flag */}
-                            <div className="aspect-video bg-black border-b-2 border-[#333] overflow-hidden relative">
-                                {country.flag_url ? (
+                            <div className="aspect-video bg-black border-b border-[#333] overflow-hidden relative">
+                                {country.flagUrl ? (
                                     <img
-                                        src={country.flag_url}
+                                        src={country.flagUrl}
                                         alt={`${country.name} flag`}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500"
                                     />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-6xl">
+                                    <div className="w-full h-full flex items-center justify-center text-6xl text-gray-700">
                                         🏳️
                                     </div>
                                 )}
                                 {/* Rank Badge */}
-                                {country.military_rank && country.military_rank <= 30 && (
-                                    <div className="absolute top-2 right-2 bg-blue-600 text-white px-3 py-1 text-xs font-bold font-mono">
-                                        #{country.military_rank}
+                                {country.militaryRank && country.militaryRank <= 50 && (
+                                    <div className="absolute top-2 right-2 bg-red-900/90 border border-red-600 text-white px-2 py-0.5 text-[10px] font-bold font-mono tracking-wider">
+                                        RK #{country.militaryRank}
                                     </div>
                                 )}
                             </div>
 
                             {/* Info */}
-                            <div className="p-4">
+                            <div className="p-4 bg-gradient-to-b from-[#111] to-black">
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-black text-white group-hover:text-blue-500 transition-colors line-clamp-1">
+                                        <h3 className="text-xl font-black text-white italic uppercase group-hover:text-red-500 transition-colors line-clamp-1">
                                             {country.name}
                                         </h3>
-                                        <p className="text-xs text-gray-500 font-mono">{country.code}</p>
+                                        <p className="text-[10px] text-lime-500 font-mono">{country.code}</p>
                                     </div>
                                 </div>
 
                                 {/* Stats */}
-                                <div className="space-y-2 text-xs">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500 font-mono">Capital:</span>
-                                        <span className="text-white font-bold">{country.capital || '-'}</span>
+                                <div className="space-y-2 text-[10px] uppercase">
+                                    <div className="flex justify-between border-b border-[#222] pb-1">
+                                        <span className="text-gray-500 font-mono">Capital</span>
+                                        <span className="text-gray-300 font-bold">{country.capital || '-'}</span>
+                                    </div>
+                                    <div className="flex justify-between border-b border-[#222] pb-1">
+                                        <span className="text-gray-500 font-mono">Força Ativa</span>
+                                        <span className="text-red-500 font-bold font-mono">{formatNumber(country.activeMilitary)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-gray-500 font-mono">🪖 Militares:</span>
-                                        <span className="text-red-500 font-bold">{formatNumber(country.active_military)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500 font-mono">💰 Orçamento:</span>
-                                        <span className="text-green-500 font-bold">${formatNumber(country.military_budget_usd)}</span>
+                                        <span className="text-gray-500 font-mono">Budget</span>
+                                        <span className="text-lime-500 font-bold font-mono">${formatNumber(country.militaryBudgetUsd)}</span>
                                     </div>
                                 </div>
 
                                 {/* Region Badge */}
-                                <div className="mt-4 pt-3 border-t border-[#333]">
-                                    <span className="inline-block px-3 py-1 bg-[#111] border border-[#333] text-xs font-mono text-gray-400">
+                                <div className="mt-4 pt-3 border-t border-[#333] flex justify-between items-center">
+                                    <span className="inline-block px-2 py-0.5 bg-[#1a1a1a] border border-[#333] text-[9px] font-mono text-gray-500 uppercase group-hover:border-gray-500 transition-colors">
                                         {country.region || country.continent}
                                     </span>
+                                    <span className="text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">➜</span>
                                 </div>
                             </div>
                         </Link>
@@ -200,10 +201,10 @@ export function CountriesPage() {
 
                 {/* Empty State */}
                 {filteredCountries.length === 0 && (
-                    <div className="gaming-card bg-[#0a0a0a] border-2 border-blue-900/50 p-16 text-center">
-                        <div className="text-8xl mb-4">🔍</div>
-                        <h2 className="text-3xl font-black italic text-white uppercase mb-4">Nenhum País Encontrado</h2>
-                        <p className="text-gray-400 font-mono">Tente ajustar os filtros de busca</p>
+                    <div className="gaming-card bg-[#0a0a0a] border-2 border-red-900/50 p-16 text-center animate-fade-in">
+                        <div className="text-6xl mb-4 opacity-50">📡</div>
+                        <h2 className="text-2xl font-black italic text-white uppercase mb-2">Nenhum Alvo Localizado</h2>
+                        <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">Ajuste os parâmetros de busca</p>
                     </div>
                 )}
             </div>
