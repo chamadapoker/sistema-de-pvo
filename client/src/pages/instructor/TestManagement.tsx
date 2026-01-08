@@ -11,6 +11,11 @@ export function TestManagement() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Results View State
+    const [isResultsModalOpen, setIsResultsModalOpen] = useState(false);
+    const [selectedTestResults, setSelectedTestResults] = useState<any[]>([]);
+    const [selectedTestName, setSelectedTestName] = useState('');
+
     // Form state
     const [formData, setFormData] = useState({
         title: '',
@@ -37,6 +42,20 @@ export function TestManagement() {
             setCategories(categoriesData.categories);
         } catch (error) {
             console.error('Error loading data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleViewResults = async (testId: string, testName: string) => {
+        try {
+            setLoading(true);
+            const results = await testService.getTestAttempts(testId);
+            setSelectedTestResults(results);
+            setSelectedTestName(testName);
+            setIsResultsModalOpen(true);
+        } catch (error: any) {
+            alert('Erro ao carregar resultados: ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -277,6 +296,7 @@ export function TestManagement() {
     return (
         <DashboardLayout>
             <div className="space-y-8 animate-fade-in">
+                {/* Header */}
                 <div className="flex items-center justify-between border-b border-green-900/30 pb-6">
                     <div>
                         <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter">
@@ -294,7 +314,7 @@ export function TestManagement() {
                     </Link>
                 </div>
 
-                {loading ? (
+                {loading && !isResultsModalOpen ? (
                     <div className="text-center py-12">
                         <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
                     </div>
@@ -346,7 +366,14 @@ export function TestManagement() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2 ml-4 self-center">
+                                        <div className="flex gap-2 ml-4 self-center flex-col md:flex-row">
+                                            <button
+                                                onClick={() => handleViewResults(test.id, test.name)}
+                                                className="btn-gaming bg-[#111] border-[#333] hover:border-white text-xs py-2 px-4"
+                                            >
+                                                RESULTADOS
+                                            </button>
+
                                             {status === 'SCHEDULED' && (
                                                 <button
                                                     onClick={() => handleActivate(test.id)}
@@ -363,15 +390,10 @@ export function TestManagement() {
                                                     ENCERRAR
                                                 </button>
                                             )}
-                                            {status === 'FINISHED' && (
-                                                <button disabled className="btn-gaming opacity-50 cursor-not-allowed bg-[#111] text-gray-500 border-[#333] text-xs py-2 px-4">
-                                                    CONCLUÍDA
-                                                </button>
-                                            )}
 
                                             <button
                                                 onClick={() => handleDelete(test.id)}
-                                                className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-red-600 text-xs py-2 px-4"
+                                                className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-red-600 text-xs py-2 px-4 text-red-500"
                                                 title="Excluir Prova"
                                             >
                                                 ✕
@@ -381,6 +403,54 @@ export function TestManagement() {
                                 </div>
                             );
                         })}
+                    </div>
+                )}
+
+                {/* RESULTS MODAL */}
+                {isResultsModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="bg-[#0f0f0f] border-2 border-green-600 w-full max-w-4xl max-h-[80vh] overflow-y-auto shadow-2xl p-6">
+                            <div className="flex justify-between items-center border-b border-green-900/30 pb-4 mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-black italic text-white uppercase">Resultados da Avaliação</h2>
+                                    <p className="text-green-500 font-mono text-sm">{selectedTestName}</p>
+                                </div>
+                                <button onClick={() => setIsResultsModalOpen(false)} className="text-gray-500 hover:text-white text-xl">✕</button>
+                            </div>
+
+                            {selectedTestResults.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500 font-mono border border-dashed border-[#333]">
+                                    Nenhum aluno realizou esta prova ainda.
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-4 gap-4 text-xs font-mono uppercase text-gray-500 border-b border-[#333] pb-2 px-4">
+                                        <div>Aluno</div>
+                                        <div>Nota</div>
+                                        <div>Acertos</div>
+                                        <div>Data</div>
+                                    </div>
+                                    {selectedTestResults.map((result, idx) => (
+                                        <div key={idx} className="grid grid-cols-4 gap-4 items-center bg-[#0a0a0a] border border-[#222] p-4 hover:border-green-600 transition-all">
+                                            <div className="text-white font-bold truncate">
+                                                {result.user?.email || 'Aluno ID: ' + result.userId}
+                                            </div>
+                                            <div>
+                                                <span className={`text-lg font-black italic ${result.score >= 70 ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {Math.round(result.score)}%
+                                                </span>
+                                            </div>
+                                            <div className="text-gray-400 font-mono text-xs">
+                                                {result.correctAnswers} / {result.totalQuestions}
+                                            </div>
+                                            <div className="text-gray-500 text-xs font-mono">
+                                                {new Date(result.completedAt).toLocaleDateString('pt-BR')} {new Date(result.completedAt).toLocaleTimeString('pt-BR')}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
