@@ -6,6 +6,8 @@ export interface User {
   name: string;
   role: Role;
   createdAt: string;
+  blocked?: boolean;
+  accessUntil?: string;
 }
 
 export interface AuthResponse {

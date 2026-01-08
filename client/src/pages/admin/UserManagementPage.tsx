@@ -10,15 +10,28 @@ export function UserManagementPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Create User Modal State
+    // Modal States
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    // Forms
     const [createFormData, setCreateFormData] = useState({
         name: '',
         email: '',
         password: '',
         role: 'STUDENT' as Role
     });
-    const [creating, setCreating] = useState(false);
+
+    const [editFormData, setEditFormData] = useState({
+        id: '',
+        name: '',
+        email: '',
+        password: '',
+        blocked: false,
+        accessUntil: '', // YYYY-MM-DD
+    });
+
+    const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
         loadUsers();
@@ -46,13 +59,59 @@ export function UserManagementPage() {
         }
     };
 
+    const handleOpenEdit = (user: User) => {
+        setEditFormData({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            password: '', // blank by default
+            blocked: user.blocked || false,
+            accessUntil: user.accessUntil ? new Date(user.accessUntil).toISOString().split('T')[0] : ''
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setProcessing(true);
+        try {
+            await userService.updateUser(editFormData.id, {
+                name: editFormData.name,
+                email: editFormData.email,
+                password: editFormData.password || undefined,
+                blocked: editFormData.blocked,
+                accessUntil: editFormData.accessUntil ? new Date(editFormData.accessUntil).toISOString() : null
+            });
+            alert('Usuário atualizado com sucesso!');
+            setIsEditModalOpen(false);
+            loadUsers();
+        } catch (error: any) {
+            alert('Erro ao atualizar: ' + error.message);
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleDeleteUser = async (id: string) => {
+        if (!confirm('ATENÇÃO: Isso excluirá permanentemente o usuário e todos os seus dados. Continuar?')) return;
+        setProcessing(true);
+        try {
+            await userService.deleteUser(id);
+            loadUsers();
+        } catch (error: any) {
+            alert('Erro ao excluir: ' + error.message);
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
-        setCreating(true);
+        setProcessing(true);
         try {
             if (createFormData.password.length < 6) {
                 alert("A senha deve ter no mínimo 6 caracteres.");
-                setCreating(false);
+                setProcessing(false);
                 return;
             }
 
@@ -64,7 +123,7 @@ export function UserManagementPage() {
         } catch (error: any) {
             alert("Erro ao criar usuário: " + error.message);
         } finally {
-            setCreating(false);
+            setProcessing(false);
         }
     };
 
@@ -132,44 +191,50 @@ export function UserManagementPage() {
                         </div>
                     ) : (
                         filteredUsers.map(u => (
-                            <div key={u.id} className="group flex flex-col md:flex-row items-center justify-between bg-[#0a0a0a] border border-[#222] p-4 hover:border-red-600 transition-all">
+                            <div key={u.id} className={`group flex flex-col md:flex-row items-center justify-between bg-[#0a0a0a] border border-[#222] p-4 hover:border-red-600 transition-all ${u.blocked ? 'opacity-50 grayscale' : ''}`}>
                                 <div className="flex items-center gap-4 mb-4 md:mb-0 w-full md:w-auto">
-                                    <div className="w-10 h-10 bg-[#111] border border-[#333] flex items-center justify-center text-red-600 font-bold">
-                                        {u.name[0]?.toUpperCase()}
+                                    <div className={`w-10 h-10 border flex items-center justify-center font-bold ${u.blocked ? 'bg-red-900/20 border-red-900 text-red-500' : 'bg-[#111] border-[#333] text-gray-300'}`}>
+                                        {u.blocked ? '⛔' : u.name[0]?.toUpperCase()}
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-white font-bold uppercase">{u.name}</span>
                                             {getRoleBadge(u.role)}
+                                            {u.blocked && <span className="text-xs text-red-500 font-bold uppercase border border-red-500 px-1">BLOQUEADO</span>}
                                         </div>
                                         <div className="text-xs text-gray-500 font-mono">{u.email}</div>
-                                        <div className="text-[10px] text-gray-600 font-mono mt-1">ID: {u.id}</div>
+                                        {u.accessUntil && (
+                                            <div className="text-[10px] text-green-500 font-mono mt-0.5">
+                                                Acesso até: {new Date(u.accessUntil).toLocaleDateString()}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                                     {u.id !== currentUser?.id && (
                                         <>
+                                            <div className="flex flex-col gap-1 mr-4 border-r border-[#333] pr-4">
+                                                <div className="text-[10px] text-gray-500 font-mono uppercase text-right mb-1">Patente</div>
+                                                <div className="flex gap-1">
+                                                    <button onClick={() => handleRoleChange(u.id, 'STUDENT')} disabled={u.role === 'STUDENT'} className={`w-6 h-6 flex items-center justify-center text-[10px] border ${u.role === 'STUDENT' ? 'bg-green-900 border-green-500 text-white' : 'bg-[#111] border-[#333] text-gray-500 hover:border-green-500'}`}>A</button>
+                                                    <button onClick={() => handleRoleChange(u.id, 'INSTRUCTOR')} disabled={u.role === 'INSTRUCTOR'} className={`w-6 h-6 flex items-center justify-center text-[10px] border ${u.role === 'INSTRUCTOR' ? 'bg-yellow-900 border-yellow-500 text-white' : 'bg-[#111] border-[#333] text-gray-500 hover:border-yellow-500'}`}>I</button>
+                                                    <button onClick={() => handleRoleChange(u.id, 'ADMIN')} disabled={u.role === 'ADMIN'} className={`w-6 h-6 flex items-center justify-center text-[10px] border ${u.role === 'ADMIN' ? 'bg-red-900 border-red-500 text-white' : 'bg-[#111] border-[#333] text-gray-500 hover:border-red-500'}`}>C</button>
+                                                </div>
+                                            </div>
+
                                             <button
-                                                onClick={() => handleRoleChange(u.id, 'STUDENT')}
-                                                disabled={u.role === 'STUDENT'}
-                                                className={`px-3 py-1 text-[10px] font-mono uppercase border ${u.role === 'STUDENT' ? 'bg-green-900/20 border-green-900 text-green-500 cursor-default' : 'bg-[#111] border-[#333] text-gray-400 hover:border-green-600 hover:text-green-500'}`}
+                                                onClick={() => handleOpenEdit(u)}
+                                                className="bg-[#111] border border-[#333] hover:border-blue-500 text-blue-500 hover:bg-blue-900/20 px-3 py-1 text-xs font-mono uppercase"
                                             >
-                                                Aluno
+                                                EDITAR
                                             </button>
+
                                             <button
-                                                onClick={() => handleRoleChange(u.id, 'INSTRUCTOR')}
-                                                disabled={u.role === 'INSTRUCTOR'}
-                                                className={`px-3 py-1 text-[10px] font-mono uppercase border ${u.role === 'INSTRUCTOR' ? 'bg-yellow-900/20 border-yellow-900 text-yellow-500 cursor-default' : 'bg-[#111] border-[#333] text-gray-400 hover:border-yellow-600 hover:text-yellow-500'}`}
+                                                onClick={() => handleDeleteUser(u.id)}
+                                                className="bg-[#111] border border-[#333] hover:border-red-500 text-red-500 hover:bg-red-900/20 px-3 py-1 text-xs font-mono uppercase"
                                             >
-                                                Instrutor
-                                            </button>
-                                            <button
-                                                onClick={() => handleRoleChange(u.id, 'ADMIN')}
-                                                disabled={u.role === 'ADMIN'}
-                                                className={`px-3 py-1 text-[10px] font-mono uppercase border ${u.role === 'ADMIN' ? 'bg-red-900/20 border-red-900 text-red-500 cursor-default' : 'bg-[#111] border-[#333] text-gray-400 hover:border-red-600 hover:text-red-500'}`}
-                                            >
-                                                Comandante
+                                                EXCLUIR
                                             </button>
                                         </>
                                     )}
@@ -244,10 +309,93 @@ export function UserManagementPage() {
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={creating}
+                                        disabled={processing}
                                         className="btn-gaming bg-red-700 hover:bg-red-600 border-red-500"
                                     >
-                                        {creating ? 'Processando...' : 'Criar Conta'}
+                                        {processing ? '...' : 'Criar Conta'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Edit Modal */}
+                {isEditModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+                        <div className="bg-[#0f0f0f] border-2 border-blue-900 w-full max-w-md p-8 shadow-[0_0_50px_rgba(30,58,138,0.2)] animate-scale-in">
+                            <h2 className="text-2xl font-black italic text-white uppercase border-b border-blue-900/30 pb-4 mb-6">
+                                Editar Usuário
+                            </h2>
+                            <form onSubmit={handleUpdateUser} className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-mono text-gray-500 uppercase">Nome</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[#0a0a0a] border border-[#333] p-3 text-white focus:border-blue-600 focus:outline-none uppercase font-bold"
+                                        value={editFormData.name}
+                                        onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-mono text-gray-500 uppercase">Email</label>
+                                    <input
+                                        type="email"
+                                        className="w-full bg-[#0a0a0a] border border-[#333] p-3 text-white focus:border-blue-600 focus:outline-none font-mono"
+                                        value={editFormData.email}
+                                        onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
+                                    />
+                                </div>
+                                <div className="bg-yellow-900/10 border border-yellow-900/30 p-3">
+                                    <label className="text-xs font-mono text-yellow-500 uppercase block mb-1">Redefinir Senha (Opcional)</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[#0a0a0a] border border-[#333] p-2 text-white focus:border-yellow-600 focus:outline-none font-mono tracking-widest text-sm"
+                                        value={editFormData.password}
+                                        onChange={e => setEditFormData({ ...editFormData, password: e.target.value })}
+                                        placeholder="Nova senha..."
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                    <div className="border border-[#333] p-3 bg-[#0a0a0a]">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 accent-red-600"
+                                                checked={editFormData.blocked}
+                                                onChange={e => setEditFormData({ ...editFormData, blocked: e.target.checked })}
+                                            />
+                                            <span className={`text-xs font-bold uppercase ${editFormData.blocked ? 'text-red-500' : 'text-gray-400'}`}>
+                                                {editFormData.blocked ? 'BLOQUEADO' : 'ATIVO'}
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div className="border border-[#333] p-3 bg-[#0a0a0a]">
+                                        <label className="text-[10px] text-gray-500 uppercase block mb-1">Acesso Até (Opcional)</label>
+                                        <input
+                                            type="date"
+                                            className="w-full bg-transparent text-white text-xs focus:outline-none font-mono"
+                                            value={editFormData.accessUntil}
+                                            onChange={e => setEditFormData({ ...editFormData, accessUntil: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t border-[#333] mt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditModalOpen(false)}
+                                        className="px-4 py-2 text-gray-500 hover:text-white font-mono uppercase text-sm"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="btn-gaming bg-blue-700 hover:bg-blue-600 border-blue-500"
+                                    >
+                                        {processing ? '...' : 'Salvar'}
                                     </button>
                                 </div>
                             </form>

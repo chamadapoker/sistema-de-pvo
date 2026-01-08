@@ -19,6 +19,8 @@ export const userService = {
             email: u.email,
             name: u.raw_user_meta_data?.name || 'Usuário',
             role: (u.raw_user_meta_data?.role as Role) || 'STUDENT',
+            blocked: u.raw_user_meta_data?.blocked || false,
+            accessUntil: u.raw_user_meta_data?.access_until || null,
             createdAt: u.created_at
         }));
     },
@@ -32,11 +34,36 @@ export const userService = {
         if (error) throw new Error(error.message);
     },
 
+    async updateUser(userId: string, data: {
+        name?: string;
+        email?: string;
+        password?: string;
+        blocked?: boolean;
+        accessUntil?: string | null;
+    }): Promise<void> {
+        const { error } = await supabase.rpc('admin_update_user', {
+            target_user_id: userId,
+            new_name: data.name || null,
+            new_email: data.email || null,
+            new_password: data.password || null,
+            is_blocked: data.blocked, // Keep boolean or undefined
+            access_until: data.accessUntil
+        });
+
+        if (error) throw new Error(error.message);
+    },
+
+    async deleteUser(userId: string): Promise<void> {
+        const { error } = await supabase.rpc('admin_delete_user', {
+            target_user_id: userId
+        });
+
+        if (error) throw new Error(error.message);
+    },
+
     async createUser(userData: any): Promise<void> {
         if (!supabaseUrl || !supabaseAnonKey) throw new Error("Supabase not configured");
 
-        // Create a temporary client to avoid logging out the admin
-        // Use a unique storage key to ensure complete isolation from the admin's session
         const tempClient = createClient(supabaseUrl, supabaseAnonKey, {
             auth: {
                 persistSession: false,
@@ -59,17 +86,12 @@ export const userService = {
 
         if (error) throw error;
 
-        // Check for existing user (Supabase fake success for existing emails)
         if (data.user && data.user.identities && data.user.identities.length === 0) {
             throw new Error("Este email já está registrado no sistema.");
         }
 
         if (!data.user) {
-            throw new Error("Erro desconhecido ao criar usuário (sem dados retornados).");
+            throw new Error("Erro desconhecido ao criar usuário.");
         }
-    },
-
-    async deleteUser(userId: string): Promise<void> {
-        throw new Error("Exclusão de usuário requer acesso direto ao painel do Supabase");
     }
 };
