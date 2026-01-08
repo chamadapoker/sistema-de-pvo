@@ -75,7 +75,7 @@ export function UserManagementPage() {
             case 'INSTRUCTOR':
                 return <span className="px-2 py-0.5 bg-yellow-900/40 text-yellow-500 border border-yellow-900 text-[10px] font-mono uppercase tracking-wider">INSTRUTOR</span>;
             case 'STUDENT':
-                return <span className="px-2 py-0.5 bg-green-900/40 text-green-500 border border-green-900 text-[10px] font-mono uppercase tracking-wider">CADETE</span>;
+                return <span className="px-2 py-0.5 bg-green-900/40 text-green-500 border border-green-900 text-[10px] font-mono uppercase tracking-wider">ALUNO</span>;
             default:
                 return null;
         }
@@ -155,7 +155,7 @@ export function UserManagementPage() {
                                                 disabled={u.role === 'STUDENT'}
                                                 className={`px-3 py-1 text-[10px] font-mono uppercase border ${u.role === 'STUDENT' ? 'bg-green-900/20 border-green-900 text-green-500 cursor-default' : 'bg-[#111] border-[#333] text-gray-400 hover:border-green-600 hover:text-green-500'}`}
                                             >
-                                                Cadete
+                                                Aluno
                                             </button>
                                             <button
                                                 onClick={() => handleRoleChange(u.id, 'INSTRUCTOR')}
@@ -228,7 +228,7 @@ export function UserManagementPage() {
                                         value={createFormData.role}
                                         onChange={e => setCreateFormData({ ...createFormData, role: e.target.value as Role })}
                                     >
-                                        <option value="STUDENT">CADETE (ALUNO)</option>
+                                        <option value="STUDENT">ALUNO</option>
                                         <option value="INSTRUCTOR">INSTRUTOR</option>
                                         <option value="ADMIN">COMANDANTE (ADMIN)</option>
                                     </select>
