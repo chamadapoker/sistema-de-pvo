@@ -131,7 +131,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 ${collapsed ? 'w-20' : 'w-64'}
             `}>
                 {/* Logo Area */}
-                <div className="h-20 flex items-center justify-center border-b border-[#222] gap-3 relative">
+                <div className={`h-20 flex items-center border-b border-[#222] gap-3 relative ${collapsed ? 'justify-center' : 'pl-6'}`}>
                     <img src="/assets/Leoall.gif" alt="Logo" className="h-10 w-auto mix-blend-screen" />
                     {!collapsed && (
                         <div className="text-2xl font-black italic tracking-tighter cursor-default select-none animate-fade-in">

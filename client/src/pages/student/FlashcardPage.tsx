@@ -326,7 +326,11 @@ export function FlashcardPage() {
                                                             onClick={() => toggleEquipmentSelection(eq.id)}
                                                             className={`relative aspect-square border-2 group transition-all ${isSelected ? 'border-red-600 opacity-100' : 'border-[#222] opacity-50 hover:opacity-100 hover:border-gray-500'}`}
                                                         >
-                                                            <img src={eq.thumbnailPath || eq.imagePath} alt={eq.name} className="w-full h-full object-cover" />
+                                                            <img
+                                                                src={eq.imagePath?.startsWith('http') ? eq.imagePath : `${STORAGE_URL}/${eq.imagePath}`}
+                                                                alt={eq.name}
+                                                                className="w-full h-full object-cover"
+                                                            />
                                                             {isSelected && (
                                                                 <div className="absolute inset-0 bg-red-900/40 flex items-center justify-center">
                                                                     <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
@@ -352,8 +356,8 @@ export function FlashcardPage() {
                             onClick={startSession}
                             disabled={loading || (selectionMode === 'MANUAL' && selectedEquipmentIds.length === 0)}
                             className={`btn-gaming w-full max-w-md mx-auto text-xl py-6 border-2 shadow-[0_0_30px_rgba(220,38,38,0.4)] ${loading || (selectionMode === 'MANUAL' && selectedEquipmentIds.length === 0)
-                                    ? 'bg-[#222] border-[#333] text-gray-500 cursor-not-allowed'
-                                    : 'bg-red-600 hover:bg-red-500 border-red-400 text-white'
+                                ? 'bg-[#222] border-[#333] text-gray-500 cursor-not-allowed'
+                                : 'bg-red-600 hover:bg-red-500 border-red-400 text-white'
                                 }`}
                         >
                             {loading ? 'CARREGANDO DADOS...' : 'INICIAR EXERCÍCIO'}
