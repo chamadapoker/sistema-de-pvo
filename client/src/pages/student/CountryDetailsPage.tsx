@@ -17,11 +17,15 @@ export function CountryDetailsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [searchText, setSearchText] = useState('');
     const [selectedEquipment, setSelectedEquipment] = useState<any>(null);
+
+    // AI & Comparison State
     const [isSelectingCompare, setIsSelectingCompare] = useState(false);
     const [comparingItem, setComparingItem] = useState<any>(null);
     const [intelOpen, setIntelOpen] = useState(false);
     const [intelData, setIntelData] = useState('');
     const [loadingIntel, setLoadingIntel] = useState(false);
+    const [isAskingIntel, setIsAskingIntel] = useState(false);
+    const [intelQuery, setIntelQuery] = useState('');
 
     useEffect(() => {
         if (countryId) {
@@ -62,12 +66,25 @@ export function CountryDetailsPage() {
 
     const categories = Array.from(new Set(equipment.map(e => e.categoryName))).sort();
 
+    const handleAskIntel = () => {
+        setIsAskingIntel(true);
+        setIntelQuery('');
+        setIntelOpen(false); // Close previous report if open
+    };
+
     const handleGenerateIntel = async () => {
         if (!selectedEquipment || !country) return;
         setLoadingIntel(true);
+        setIsAskingIntel(false);
         setIntelOpen(true);
+        setIntelData('');
         try {
-            const report = await aiService.getTacticalIntel(selectedEquipment.name, selectedEquipment.categoryName, country.name);
+            const report = await aiService.getTacticalIntel(
+                selectedEquipment.name,
+                selectedEquipment.categoryName,
+                country.name,
+                intelQuery || undefined
+            );
             setIntelData(report);
         } catch (error) {
             setIntelData('ERRO AO ESTABELECER LINK COM CENTRO DE INTELIGÊNCIA. TENTE NOVAMENTE.');
@@ -111,7 +128,6 @@ export function CountryDetailsPage() {
                     </button>
                 </div>
 
-                {/* Status Grid - Intelligence Data */}
                 {/* Status Grid - Intelligence Data */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
@@ -203,7 +219,6 @@ export function CountryDetailsPage() {
                             </div>
 
                             <div className="absolute bottom-0 left-0 w-full p-4">
-                                { /* Correctly Removed Code Display */}
                                 <h4 className="font-black text-white text-sm italic uppercase leading-tight group-hover:text-lime-400 transition-colors">
                                     {item.name}
                                 </h4>
@@ -215,11 +230,12 @@ export function CountryDetailsPage() {
                 {/* MODAL / COMPARISON SYSTEM */}
                 {selectedEquipment && (
                     <div
-                        className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black animate-fade-in"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black animate-fade-in"
                         onClick={() => {
                             setSelectedEquipment(null);
                             setComparingItem(null);
                             setIsSelectingCompare(false);
+                            setIntelOpen(false);
                         }}
                     >
                         <div
@@ -357,6 +373,39 @@ export function CountryDetailsPage() {
                                         </div>
                                     </div>
 
+                                    /* CASE 2.5: ASKING INTEL MODE */
+                                ) : isAskingIntel ? (
+                                    <div className="flex flex-col h-full bg-[#111] border-l border-red-900/30 animate-fade-in">
+                                        <div className="p-4 border-b border-red-900/30 bg-red-900/10">
+                                            <h3 className="text-red-500 font-black italic uppercase text-lg">⚠️ REQUISIÇÃO DE INTELIGÊNCIA</h3>
+                                            <p className="text-[10px] font-mono text-gray-400 mt-1">Especifique sua necessidade de informação tática sobre este ativo estrangeiro.</p>
+                                        </div>
+                                        <div className="p-6 flex-1 flex flex-col gap-4">
+                                            <textarea
+                                                className="w-full flex-1 bg-[#050505] border border-[#333] p-4 text-white text-sm font-mono focus:border-red-600 focus:outline-none resize-none"
+                                                placeholder="Ex: Como este equipamento se compara às nossas contramedidas? Há relatórios de exportação para países hostis?"
+                                                value={intelQuery}
+                                                onChange={e => setIntelQuery(e.target.value)}
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setIsAskingIntel(false)}
+                                                    className="flex-1 py-3 bg-[#1a1a1a] border border-[#333] hover:border-gray-500 text-gray-400 uppercase font-bold text-xs"
+                                                >
+                                                    CANCELAR
+                                                </button>
+                                                <button
+                                                    onClick={handleGenerateIntel}
+                                                    disabled={!intelQuery.trim()}
+                                                    className="flex-1 py-3 bg-red-900/20 border border-red-600 hover:bg-red-900 text-red-500 hover:text-white uppercase font-bold text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    ENVIAR REQUISIÇÃO
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     /* CASE 3: VISUALIZAÇÃO PADRÃO (DETAILS) */
                                 ) : (
                                     <>
@@ -393,7 +442,7 @@ export function CountryDetailsPage() {
                                                 PVO DATABASE // {new Date().getFullYear()}
                                             </div>
                                             <button
-                                                onClick={handleGenerateIntel}
+                                                onClick={handleAskIntel}
                                                 disabled={loadingIntel}
                                                 className="absolute bottom-2 right-2 text-[10px] bg-red-900/10 text-red-500 hover:text-white border border-red-900 hover:bg-red-900 px-3 py-1 font-bold uppercase transition-all disabled:opacity-50"
                                             >
@@ -405,7 +454,7 @@ export function CountryDetailsPage() {
                             </div>
 
                             {/* --- ABA DE INTELIGÊNCIA (OVERLAY) --- */}
-                            {intelOpen && !comparingItem && !isSelectingCompare && (
+                            {intelOpen && !comparingItem && !isSelectingCompare && !isAskingIntel && (
                                 <div className="absolute top-0 right-0 w-full md:w-1/3 bg-[#0a0a0a]/95 h-full border-l border-red-900/50 flex flex-col animate-fade-in z-50 backdrop-blur-xl">
                                     <div className="p-4 border-b border-red-900/30 flex justify-between items-center bg-red-900/5">
                                         <div className="flex items-center gap-2">

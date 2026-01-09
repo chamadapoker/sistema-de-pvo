@@ -27,6 +27,8 @@ export function TrainingPage() {
     const [intelOpen, setIntelOpen] = useState(false);
     const [intelData, setIntelData] = useState('');
     const [loadingIntel, setLoadingIntel] = useState(false);
+    const [isAskingIntel, setIsAskingIntel] = useState(false);
+    const [intelQuery, setIntelQuery] = useState('');
     const [operators, setOperators] = useState<{ id: number; name: string; flagUrl: string }[]>([]);
 
     const STORAGE_URL = "https://baoboggeqhksaxkuudap.supabase.co/storage/v1/object/public/equipment-images";
@@ -118,12 +120,26 @@ export function TrainingPage() {
         equipmentService.getOperators(currentViewItem.id).then(setOperators);
     }, [currentViewItem]);
 
+    const handleAskIntel = () => {
+        setIsAskingIntel(true);
+        setIntelQuery('');
+        setIntelOpen(false); // Close previous report if open
+    };
+
     const handleGenerateIntel = async () => {
         if (!currentViewItem) return;
         setLoadingIntel(true);
+        setIsAskingIntel(false);
         setIntelOpen(true);
+        setIntelData(''); // Clear previous data to show loading state correctly
+
         try {
-            const report = await aiService.getTacticalIntel(currentViewItem.name, currentViewItem.category?.name || 'Unknown', currentViewItem.country || 'Desconhecido');
+            const report = await aiService.getTacticalIntel(
+                currentViewItem.name,
+                currentViewItem.category?.name || 'Unknown',
+                currentViewItem.country || 'Desconhecido',
+                intelQuery || undefined
+            );
             setIntelData(report);
         } catch (error) {
             setIntelData('ERRO AO ESTABELECER LINK COM CENTRO DE INTELIGÊNCIA. TENTE NOVAMENTE.');
@@ -251,7 +267,7 @@ export function TrainingPage() {
 
                 {/* LEVEL 3: MODEL DETAILS & GALLERY MODAL */}
                 {selectedModelGroup && currentViewItem && (
-                    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black animate-fade-in" onClick={() => setSelectedModelGroup(null)}>
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black animate-fade-in" onClick={() => setSelectedModelGroup(null)}>
                         <div
                             className={`bg-[#0a0a0a] border-2 border-lime-900 w-full transition-all duration-500 ease-in-out h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-[0_0_100px_rgba(101,163,13,0.2)] ${comparingItem || isSelectingCompare ? 'max-w-[95vw]' : 'max-w-[90vw]'}`}
                             onClick={e => e.stopPropagation()}
@@ -403,6 +419,39 @@ export function TrainingPage() {
                                         </div>
                                     </div>
 
+                                    /* CASE 2.5: ASKING INTEL MODE */
+                                ) : isAskingIntel ? (
+                                    <div className="flex flex-col h-full bg-[#111] border-l border-red-900/30 animate-fade-in">
+                                        <div className="p-4 border-b border-red-900/30 bg-red-900/10">
+                                            <h3 className="text-red-500 font-black italic uppercase text-lg">⚠️ REQUISIÇÃO DE INTELIGÊNCIA</h3>
+                                            <p className="text-[10px] font-mono text-gray-400 mt-1">Especifique sua necessidade de informação tática.</p>
+                                        </div>
+                                        <div className="p-6 flex-1 flex flex-col gap-4">
+                                            <textarea
+                                                className="w-full flex-1 bg-[#050505] border border-[#333] p-4 text-white text-sm font-mono focus:border-red-600 focus:outline-none resize-none"
+                                                placeholder="Ex: Qual o alcance máximo de engajamento? Quais as principais vulnerabilidades em terreno urbano? Histórico de combate recente?"
+                                                value={intelQuery}
+                                                onChange={e => setIntelQuery(e.target.value)}
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setIsAskingIntel(false)}
+                                                    className="flex-1 py-3 bg-[#1a1a1a] border border-[#333] hover:border-gray-500 text-gray-400 uppercase font-bold text-xs"
+                                                >
+                                                    CANCELAR
+                                                </button>
+                                                <button
+                                                    onClick={handleGenerateIntel}
+                                                    disabled={!intelQuery.trim()}
+                                                    className="flex-1 py-3 bg-red-900/20 border border-red-600 hover:bg-red-900 text-red-500 hover:text-white uppercase font-bold text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    ENVIAR REQUISIÇÃO
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     /* CASE 3: STANDARD INFO MODE */
                                 ) : (
                                     <>
@@ -452,7 +501,7 @@ export function TrainingPage() {
                                             </button>
 
                                             <button
-                                                onClick={handleGenerateIntel}
+                                                onClick={handleAskIntel}
                                                 disabled={loadingIntel}
                                                 className="w-full py-3 bg-red-900/10 text-red-500 hover:text-white border border-red-900 hover:bg-red-900 font-bold uppercase tracking-widest transition-all disabled:opacity-50 text-xs"
                                             >
@@ -470,7 +519,7 @@ export function TrainingPage() {
                                 )}
 
                                 {/* --- INTEL OVERLAY (INSIDE RIGHT COL) --- */}
-                                {intelOpen && !comparingItem && !isSelectingCompare && (
+                                {intelOpen && !comparingItem && !isSelectingCompare && !isAskingIntel && (
                                     <div className="absolute top-0 right-0 w-full bg-[#0a0a0a]/95 h-full flex flex-col animate-fade-in z-50 backdrop-blur-xl border-l border-red-900/50">
                                         <div className="p-4 border-b border-red-900/30 flex justify-between items-center bg-red-900/5">
                                             <div className="flex items-center gap-2">

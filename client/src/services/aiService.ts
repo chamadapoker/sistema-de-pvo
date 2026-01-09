@@ -16,38 +16,58 @@ const GEN_AI_KEY = import.meta.env.VITE_GEMINI_API_KEY || "YOUR_GEMINI_KEY_HERE"
 const genAI = new GoogleGenerativeAI(GEN_AI_KEY);
 
 export const aiService = {
-    async getTacticalIntel(equipmentName: string, category: string, country: string): Promise<string> {
+    async getTacticalIntel(equipmentName: string, category: string, country: string, userQuery?: string): Promise<string> {
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-            const prompt = `
-        ATUE COMO UM OFICIAL DE INTELIGÊNCIA MILITAR SÊNIOR.
-        
-        Gere um RELATÓRIO DE INTELIGÊNCIA TÁTICA (INTEL REPORT) sobre o seguinte equipamento:
-        Equipamento: ${equipmentName}
-        Categoria: ${category}
-        País de Origem/Operador: ${country}
+            let prompt = "";
 
-        O relatório deve ser IMPARCIAL, TÉCNICO e OBJETIVO. Use markdown.
-        
-        Estrutura Obrigatória:
-        
-        ### 1. PERFIL OPERACIONAL
-        Analise a doutrina de uso desse equipamento. Para que ele foi criado? Qual a filosofia de combate dele?
+            if (userQuery) {
+                // Modo Pergunta Específica (Custom Request)
+                prompt = `
+                    ATUE COMO UM OFICIAL DE INTELIGÊNCIA MILITAR SÊNIOR.
+                    
+                    OBJETIVO DA MISSÃO: Responder a uma solicitação específica de inteligência sobre o equipamento: ${equipmentName} (${category} - ${country}).
+                    
+                    SOLICITAÇÃO DO COMANDANTE (USUÁRIO): "${userQuery}"
+                    
+                    Forneça uma resposta detalhada, técnica e direta focada EXCLUSIVAMENTE na solicitação acima.
+                    Use terminologia militar adequada.
+                    Se a pergunta for sobre comparação, capacidade específica ou histórico, foque nisso.
+                    
+                    Formato: Markdown.
+                `;
+            } else {
+                // Modo Relatório Padrão (Default Report)
+                prompt = `
+            ATUE COMO UM OFICIAL DE INTELIGÊNCIA MILITAR SÊNIOR.
+            
+            Gere um RELATÓRIO DE INTELIGÊNCIA TÁTICA (INTEL REPORT) sobre o seguinte equipamento:
+            Equipamento: ${equipmentName}
+            Categoria: ${category}
+            País de Origem/Operador: ${country}
 
-        ### 2. PONTOS FORTES E VULNERABILIDADES
-        *   **Forças:** (Ex: Alcance superior, blindagem reativa, discrição radar)
-        *   **Fraquezas:** (Ex: Assinatura térmica alta, baixa mobilidade, dependência logística)
+            O relatório deve ser IMPARCIAL, TÉCNICO e OBJETIVO. Use markdown.
+            
+            Estrutura Obrigatória:
+            
+            ### 1. PERFIL OPERACIONAL
+            Analise a doutrina de uso desse equipamento. Para que ele foi criado? Qual a filosofia de combate dele?
 
-        ### 3. CONFLITOS RECENTES & PERFORMANCE REAL
-        Liste onde esse equipamento (ou variantes dele) foi usado recentemente (ex: Ucrânia, Oriente Médio) e como ele se comportou. Se não houver uso recente, cite conflitos históricos relevantes.
+            ### 2. PONTOS FORTES E VULNERABILIDADES
+            *   **Forças:** (Ex: Alcance superior, blindagem reativa, discrição radar)
+            *   **Fraquezas:** (Ex: Assinatura térmica alta, baixa mobilidade, dependência logística)
 
-        ### 4. CONTRAMEDIDAS RECOMENDADAS
-        Como uma força inimiga deve engajar este equipamento? (Ex: "Atacar pelos flancos", "Usar jamming eletrônico").
+            ### 3. CONFLITOS RECENTES & PERFORMANCE REAL
+            Liste onde esse equipamento (ou variantes dele) foi usado recentemente (ex: Ucrânia, Oriente Médio) e como ele se comportou. Se não houver uso recente, cite conflitos históricos relevantes.
 
-        ---
-        Finalize com uma conclusão de uma linha: "VEREDITO: [Alta/Média/Baixa] Ameaça em cenário convencional."
-      `;
+            ### 4. CONTRAMEDIDAS RECOMENDADAS
+            Como uma força inimiga deve engajar este equipamento? (Ex: "Atacar pelos flancos", "Usar jamming eletrônico").
+
+            ---
+            Finalize com uma conclusão de uma linha: "VEREDITO: [Alta/Média/Baixa] Ameaça em cenário convencional."
+          `;
+            }
 
             const result = await model.generateContent(prompt);
             const response = await result.response;
