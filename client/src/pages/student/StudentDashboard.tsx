@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { MFDButton } from '../../components/ui/CockpitControls';
 
 export function StudentDashboard() {
     const menuItems = [
@@ -80,47 +79,35 @@ export function StudentDashboard() {
                 </div>
 
                 {/* Menu Cards Grid - Mesmo estilo das Baterias */}
-                {/* Menu Cards Grid - AMX Style Instruments */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     {menuItems.map((item) => (
                         <Link
                             key={item.id}
                             to={item.link}
-                            className="group relative flex flex-col bg-[#1a1a1a] border-4 border-[#2a2a2a] rounded-lg shadow-2xl overflow-hidden hover:border-[#3a3a3a] transition-colors"
+                            className="group relative aspect-[3/4] overflow-hidden gaming-card bg-black border-2 border-transparent hover:border-red-600 transition-all duration-300"
                         >
-                            {/* Decorative Screws (Bezel) */}
-                            <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-[#111] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] z-20"></div>
-                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#111] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] z-20"></div>
-                            <div className="absolute bottom-2 left-2 w-2 h-2 rounded-full bg-[#111] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] z-20"></div>
-                            <div className="absolute bottom-2 right-2 w-2 h-2 rounded-full bg-[#111] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] z-20"></div>
+                            {/* Imagem de fundo com efeito Gray to Color */}
+                            <img
+                                src={item.image}
+                                className="absolute inset-0 w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 ease-out"
+                                alt={item.title}
+                            />
 
-                            {/* "Screen" Area */}
-                            <div className="relative aspect-[3/3] w-full overflow-hidden border-b-4 border-[#2a2a2a]">
-                                <img
-                                    src={item.image}
-                                    className="w-full h-full object-cover opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
-                                    alt={item.title}
-                                />
-                                {/* Scanlines & Glare */}
-                                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,255,0,0.05)_1px,transparent_1px)] bg-[length:100%_3px] pointer-events-none"></div>
-                                <div className="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] pointer-events-none"></div>
+                            {/* Overlay Gradiente */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-90 group-hover:opacity-60 transition-opacity"></div>
 
-                                <div className="absolute top-3 right-3">
-                                    <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_#dc2626]"></div>
-                                </div>
+                            {/* UI Elements do Card */}
+                            <div className="absolute top-0 right-0 p-2">
+                                <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
                             </div>
 
-                            {/* "Control Panel" Area */}
-                            <div className="flex-1 bg-[#222] p-4 flex flex-col justify-between relative pt-6">
-                                <div>
-                                    <div className="text-[10px] font-mono text-green-600 mb-1 tracking-widest uppercase">SYS. {item.subtitle}</div>
-                                    <div className="text-xl font-black italic text-white uppercase leading-none tracking-tighter mb-4">{item.title}</div>
+                            <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                                <div className="text-4xl font-black italic text-white uppercase leading-none drop-shadow-md">{item.title}</div>
+                                <div className="text-xs font-mono text-red-500 mt-1 tracking-widest">{item.subtitle}</div>
+                                <div className="flex justify-between items-center mt-2 border-t border-red-600 pt-2 opacity-0 group-hover:opacity-100 transition-opacity delay-100">
+                                    <span className="text-xs font-bold text-gray-300 font-mono tracking-widest">{item.description}</span>
+                                    <span className="text-white">➜</span>
                                 </div>
-
-                                <MFDButton
-                                    label="ACESSAR"
-                                    className="w-full pointer-events-none group-hover:bg-[#333] group-hover:text-green-400 border-green-900/30 text-green-700"
-                                />
                             </div>
                         </Link>
                     ))}
