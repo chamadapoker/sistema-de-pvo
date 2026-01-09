@@ -26,6 +26,7 @@ export const aiService = {
                 // Modo Pergunta Específica (Custom Request)
                 prompt = `
                     ATUE COMO UM OFICIAL DE INTELIGÊNCIA MILITAR SÊNIOR.
+                    RESPONDA SEMPRE EM PORTUGUÊS (PT-BR).
                     
                     OBJETIVO DA MISSÃO: Responder a uma solicitação específica de inteligência sobre o equipamento: ${equipmentName} (${category} - ${country}).
                     
