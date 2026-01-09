@@ -206,15 +206,29 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="p-4 border-t border-[#222]">
                     <button
                         onClick={handleLogout}
-                        className={`w-full flex items-center justify-center gap-3 bg-[#f44336] hover:bg-[#d32f2f] text-white font-bold text-lg rounded-lg transition-all duration-100 ease-in-out shadow-[0_4px_0_#b71c1c] active:shadow-none active:translate-y-[4px] ${collapsed ? 'px-0 py-3' : 'px-6 py-3'}`}
+                        className={`
+                            relative w-full flex items-center justify-center gap-3 
+                            bg-gradient-to-b from-red-600 to-red-800 hover:from-red-500 hover:to-red-700
+                            border-t border-red-500 border-x border-red-900/50
+                            text-white font-black text-xs uppercase tracking-[0.2em] 
+                            rounded md:rounded-lg 
+                            transition-all duration-100 ease-out 
+                            shadow-[0_3px_0_#7f1d1d,0_5px_10px_rgba(0,0,0,0.5)] 
+                            active:shadow-none active:translate-y-[3px]
+                            group
+                            ${collapsed ? 'px-0 py-3' : 'px-4 py-3'}
+                        `}
                         title="Ejetar do Sistema"
                     >
-                        {/* Custom CSS Eject Icon */}
-                        <div className="relative mb-1">
-                            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-white"></div>
-                            <div className="absolute top-[14px] -left-[8px] w-[16px] h-[3px] bg-white"></div>
+                        {/* Custom CSS Eject Icon - Compact & Sharp */}
+                        <div className="relative flex flex-col items-center justify-center gap-[2px] transform group-hover:scale-110 transition-transform duration-200">
+                            {/* Triangle */}
+                            <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[9px] border-b-white drop-shadow-md"></div>
+                            {/* Bar */}
+                            <div className="w-[14px] h-[2px] bg-white rounded-full shadow-sm"></div>
                         </div>
-                        {!collapsed && <span>Ejetar</span>}
+
+                        {!collapsed && <span className="drop-shadow-md">Ejetar</span>}
                     </button>
                 </div>
             </aside>
