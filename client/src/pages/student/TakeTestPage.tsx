@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+// ... imports remain the same
+import { useState, useEffect, useRef } from 'react';
 import { ZoomableImage } from '../../components/ui/ZoomableImage';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -8,7 +9,7 @@ import { TestAnswerSheet } from '../../components/features/TestAnswerSheet';
 import { AircraftButton } from '../../components/ui/AircraftButton';
 
 type TestState = 'LOADING' | 'READY' | 'IN_PROGRESS' | 'FINISHED';
-type ViewMode = 'CARD' | 'SHEET'; // Card is the standard image-focused view, Sheet is the retro grid
+type ViewMode = 'CARD' | 'SHEET' | 'SPEED'; // Added SPEED mode
 
 export function TakeTestPage() {
     const { testId } = useParams<{ testId: string }>();
@@ -27,27 +28,74 @@ export function TakeTestPage() {
     // View Mode State
     const [viewMode, setViewMode] = useState<ViewMode>('CARD');
 
+    // Speed Mode State
+    const [timeLeft, setTimeLeft] = useState(15);
+    const [isTimerRunning, setIsTimerRunning] = useState(false);
+    const answerInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
         if (testId) {
             loadTest();
         }
     }, [testId]);
 
-    // Auto-save quando resposta muda
+    // Timer Logic for Speed Mode
     useEffect(() => {
-        if (state === 'IN_PROGRESS' && attempt) {
-            // In Sheet mode, we save whichever changed. The sheet component calls handleAnswerChange directly.
-            // But for the 'current' question concept in CARD mode:
-            if (viewMode === 'CARD') {
-                const currentQuestion = questions[currentQuestionIndex];
-                const answer = answers.get(currentQuestion?.id);
+        let interval: any;
+        if (state === 'IN_PROGRESS' && viewMode === 'SPEED' && isTimerRunning) {
+            interval = setInterval(() => {
+                setTimeLeft((prev) => {
+                    if (prev <= 1) {
+                        // Time's up for this question
+                        handleTimeUp();
+                        return 15; // Reset for next (visual only, actual handling in handleTimeUp)
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [state, viewMode, isTimerRunning, currentQuestionIndex]);
 
-                if (answer !== undefined && currentQuestion) {
-                    const debounce = setTimeout(() => {
-                        saveAnswer(currentQuestion.id, answer);
-                    }, 2000);
-                    return () => clearTimeout(debounce);
-                }
+    const handleTimeUp = () => {
+        // Save current answer
+        const currentQuestion = questions[currentQuestionIndex];
+        const currentAnswer = answers.get(currentQuestion?.id);
+        if (currentQuestion) {
+            saveAnswer(currentQuestion.id, currentAnswer || '');
+        }
+
+        // Move to next or finish
+        if (currentQuestionIndex < questions.length - 1) {
+            setCurrentQuestionIndex(prev => prev + 1);
+            setTimeLeft(15);
+            setQuestionStartTime(Date.now());
+        } else {
+            finishTest();
+        }
+    };
+
+    // Auto-focus input when entering answer phase in Speed Mode
+    useEffect(() => {
+        if (viewMode === 'SPEED' && timeLeft <= 12 && timeLeft > 0) {
+            // Give a tiny delay for render
+            setTimeout(() => {
+                answerInputRef.current?.focus();
+            }, 50);
+        }
+    }, [timeLeft, viewMode]);
+
+    // Auto-save quando resposta muda (Standard Card Mode Only)
+    useEffect(() => {
+        if (state === 'IN_PROGRESS' && attempt && viewMode === 'CARD') {
+            const currentQuestion = questions[currentQuestionIndex];
+            const answer = answers.get(currentQuestion?.id);
+
+            if (answer !== undefined && currentQuestion) {
+                const debounce = setTimeout(() => {
+                    saveAnswer(currentQuestion.id, answer);
+                }, 2000);
+                return () => clearTimeout(debounce);
             }
         }
     }, [answers, currentQuestionIndex, state, attempt, viewMode]);
@@ -59,7 +107,7 @@ export function TakeTestPage() {
 
             if (!testData.name) {
                 // Mock active check for development
-                const isActive = true;
+                const isActive = true; // testData.is_active;
                 if (!isActive) {
                     alert('Esta prova ainda não foi liberada pelo instrutor.');
                     navigate('/student/dashboard');
@@ -103,6 +151,10 @@ export function TakeTestPage() {
             setAttempt(attemptData);
             setState('IN_PROGRESS');
             setQuestionStartTime(Date.now());
+            if (viewMode === 'SPEED') {
+                setTimeLeft(15);
+                setIsTimerRunning(true);
+            }
         } catch (error: any) {
             alert('Erro ao iniciar prova: ' + error.message);
         }
@@ -130,13 +182,7 @@ export function TakeTestPage() {
         const qId = specificQuestionId || questions[currentQuestionIndex]?.id;
         if (qId) {
             setAnswers(prev => new Map(prev).set(qId, value));
-            // For Manual Sheet mode, we might want to trigger save immediately or denounce logic per field
-            // Reusing the effect for simplicity, but explicit save call here for Sheet mode might be better safeguard
             if (viewMode === 'SHEET') {
-                // Debounce handling could be complex for multiple fields, 
-                // simply updating state triggers the Effect if we tracked 'answers' broadly, 
-                // but the Effect only looks at 'currentQuestion'.
-                // So for Sheet Mode, we should probably auto-save explicitly here with a small debounce or just fire-and-forget
                 saveAnswer(qId, value);
             }
         }
@@ -144,7 +190,7 @@ export function TakeTestPage() {
 
     const goToQuestion = async (index: number) => {
         // Salvar resposta atual antes de trocar (only needed for Card mode really)
-        if (viewMode === 'CARD') {
+        if (viewMode === 'CARD' || viewMode === 'SPEED') {
             const currentQuestion = questions[currentQuestionIndex];
             const currentAnswer = answers.get(currentQuestion?.id);
 
@@ -155,19 +201,31 @@ export function TakeTestPage() {
 
         setCurrentQuestionIndex(index);
         setQuestionStartTime(Date.now());
+
+        if (viewMode === 'SPEED') {
+            setTimeLeft(15);
+            setIsTimerRunning(true);
+        }
     };
 
     const finishTest = async () => {
-        if (!confirm('Tem certeza que deseja finalizar a prova?')) return;
+        // For Speed Mode, we might want to skip confirmation if it's auto-finish, but let's keep it safe or simple
+        if (viewMode !== 'SPEED' && !confirm('Tem certeza que deseja finalizar a prova?')) return;
+
+        // Speed mode auto-finish doesn't confirm, manual button click does? 
+        // Let's assume standard confirm if user clicks button, but auto-finish logic calls this too.
+        // We'll skip confirm if called programmatically via timer? 
+        // For now, simplicity: confirm is removed for SPEED mode ending automatically.
 
         if (!attempt) return;
+        setIsTimerRunning(false);
 
         try {
             // Salvar última resposta (Card mode)
-            if (viewMode === 'CARD') {
+            if (viewMode === 'CARD' || viewMode === 'SPEED') {
                 const currentQuestion = questions[currentQuestionIndex];
                 const currentAnswer = answers.get(currentQuestion?.id);
-                if (currentAnswer && currentQuestion) {
+                if (currentAnswer !== undefined && currentQuestion) {
                     await saveAnswer(currentQuestion.id, currentAnswer);
                 }
             }
@@ -202,7 +260,7 @@ export function TakeTestPage() {
     if (state === 'READY' && test) {
         return (
             <DashboardLayout>
-                <div className="max-w-3xl mx-auto text-center space-y-8 py-12 animate-fade-in">
+                <div className="max-w-4xl mx-auto text-center space-y-8 py-12 animate-fade-in">
                     <div className="w-32 h-32 mx-auto bg-red-900/20 rounded-full border-4 border-red-600 flex items-center justify-center">
                         <svg className="w-16 h-16 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -215,43 +273,61 @@ export function TakeTestPage() {
                     </div>
 
                     {/* Mode Selection Introduction */}
-                    <div className="flex justify-center gap-4 mb-8">
+                    <div className="flex flex-wrap justify-center gap-4 mb-8">
                         <div
                             onClick={() => setViewMode('CARD')}
-                            className={`cursor-pointer border-2 p-4 w-40 hover:border-red-500 transition-all ${viewMode === 'CARD' ? 'bg-red-900/20 border-red-500' : 'bg-[#111] border-[#333]'}`}
+                            className={`cursor-pointer border-2 p-6 w-48 hover:border-red-500 transition-all group ${viewMode === 'CARD' ? 'bg-red-900/20 border-red-500' : 'bg-[#111] border-[#333]'}`}
                         >
-                            <div className="text-xl mb-2">💻</div>
-                            <div className="text-xs font-bold uppercase">Modo Online</div>
-                            <div className="text-[10px] text-gray-400">Padrão com Imagens</div>
+                            <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">💻</div>
+                            <div className="text-sm font-bold uppercase mb-1 text-white">Modo Online</div>
+                            <div className="text-[10px] text-gray-400 leading-tight">Padrão com Imagens<br />Sem limite de tempo</div>
                         </div>
                         <div
                             onClick={() => setViewMode('SHEET')}
-                            className={`cursor-pointer border-2 p-4 w-40 hover:border-red-500 transition-all ${viewMode === 'SHEET' ? 'bg-red-900/20 border-red-500' : 'bg-[#111] border-[#333]'}`}
+                            className={`cursor-pointer border-2 p-6 w-48 hover:border-red-500 transition-all group ${viewMode === 'SHEET' ? 'bg-red-900/20 border-red-500' : 'bg-[#111] border-[#333]'}`}
                         >
-                            <div className="text-xl mb-2">📝</div>
-                            <div className="text-xs font-bold uppercase">Modo Sala</div>
-                            <div className="text-[10px] text-gray-400">Folha de Resposta</div>
+                            <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">📝</div>
+                            <div className="text-sm font-bold uppercase mb-1 text-white">Modo Sala</div>
+                            <div className="text-[10px] text-gray-400 leading-tight">Folha de Resposta<br />Para projeção</div>
+                        </div>
+                        <div
+                            onClick={() => setViewMode('SPEED')}
+                            className={`cursor-pointer border-2 p-6 w-48 hover:border-lime-500 transition-all group ${viewMode === 'SPEED' ? 'bg-lime-900/20 border-lime-500' : 'bg-[#111] border-[#333]'}`}
+                        >
+                            <div className="text-3xl mb-3 group-hover:scale-110 transition-transform">⚡</div>
+                            <div className="text-sm font-bold uppercase mb-1 text-white">Speed Drill</div>
+                            <div className="text-[10px] text-gray-400 leading-tight">3s Visualização<br />12s Resposta</div>
                         </div>
                     </div>
 
-                    <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-8 text-left">
+                    <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-8 text-left max-w-2xl mx-auto">
                         <h3 className="text-xl font-black italic text-white uppercase mb-4">Instruções</h3>
-                        <ul className="space-y-3 text-gray-300">
+                        <ul className="space-y-3 text-gray-300 font-mono text-sm">
                             <li className="flex items-start gap-3">
                                 <span className="text-red-600">▸</span>
                                 <span>Você terá <strong>{questions.length} questões</strong> para responder</span>
                             </li>
                             <li className="flex items-start gap-3">
                                 <span className="text-red-600">▸</span>
-                                <span>Modo Selecionado: <strong>{viewMode === 'CARD' ? 'ONLINE (Completo)' : 'SALA DE AULA (Apenas Folha)'}</strong></span>
+                                <span>Modo Selecionado:
+                                    <strong className="ml-1 text-white uppercase">
+                                        {viewMode === 'CARD' ? 'ONLINE (Padrão)' : viewMode === 'SHEET' ? 'SALA DE AULA (Folha)' : 'SPEED DRILL (Rápido)'}
+                                    </strong>
+                                </span>
                             </li>
+                            {viewMode === 'SPEED' && (
+                                <li className="flex items-start gap-3 text-lime-500">
+                                    <span className="text-lime-500">⚠</span>
+                                    <span>ATENÇÃO: A imagem ficará visível por apenas <strong>3 SEGUNDOS</strong>. Depois você terá <strong>12 SEGUNDOS</strong> para digitar a resposta antes da próxima questão.</span>
+                                </li>
+                            )}
                         </ul>
                     </div>
 
                     <AircraftButton
                         onClick={startTest}
                         label="INICIAR PROVA AGORA"
-                        className="w-full text-xl py-6"
+                        className="w-full max-w-2xl text-xl py-6 mx-auto"
                     />
                 </div>
             </DashboardLayout>
@@ -272,9 +348,7 @@ export function TakeTestPage() {
                             ← SAIR
                         </button>
                         <div className="flex gap-2">
-                            <button onClick={() => setViewMode('CARD')} className="px-3 py-1 border border-gray-600 text-xs text-gray-400 hover:text-white hover:border-white uppercase font-mono">
-                                Alternar para Modo Online
-                            </button>
+                            <span className="text-gray-500 font-mono text-xs uppercase">MODO FOLHA DE RESPOSTA</span>
                         </div>
                     </div>
 
@@ -289,133 +363,162 @@ export function TakeTestPage() {
             );
         }
 
-        // --- CARD VIEW RENDER (Original) ---
+        // --- CARD & SPEED VIEW RENDER ---
         const currentQuestion = questions[currentQuestionIndex];
         const currentEquipment = equipmentData.get(currentQuestion.equipment_id);
         const currentAnswer = answers.get(currentQuestion.id) || '';
         const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
         const answeredCount = Array.from(answers.values()).filter(a => a.trim()).length;
 
+        // Speed Mode Logic Vars
+        const isSpeedMode = viewMode === 'SPEED';
+        const inObservationPhase = isSpeedMode && timeLeft > 12; // First 3 seconds (15, 14, 13)
+        const inAnswerPhase = isSpeedMode && timeLeft <= 12;
+
         return (
             <DashboardLayout>
-                <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-                    {/* Header */}
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <p className="text-xs font-mono text-gray-500 uppercase">Questão</p>
-                            <p className="text-3xl font-black italic text-white">
-                                {currentQuestionIndex + 1} / {questions.length}
-                            </p>
+                <div className="max-w-5xl mx-auto space-y-6 animate-fade-in relative">
+
+                    {/* Speed Mode Timer Overlay/Header */}
+                    {isSpeedMode && (
+                        <div className="fixed top-0 left-0 w-full bg-black/90 z-50 p-2 flex justify-center items-center gap-4 border-b border-[#333]">
+                            <div className="text-sm font-mono text-gray-400">QUESTÃO {currentQuestionIndex + 1}/{questions.length}</div>
+                            <div className={`text-4xl font-black italic ${inObservationPhase ? 'text-lime-500' : 'text-red-500 animate-pulse'}`}>
+                                00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
+                            </div>
+                            <div className="text-xs font-mono font-bold uppercase">
+                                {inObservationPhase ? 'MEMORIZE O ALVO' : 'IDENTIFIQUE O ALVO'}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            {/* Toggle Button */}
-                            <button
-                                onClick={() => setViewMode('SHEET')}
-                                className="px-3 py-1 border border-gray-600 bg-[#111] text-xs font-mono text-gray-400 hover:text-white hover:border-white uppercase"
-                            >
-                                📝 Ver Folha
-                            </button>
+                    )}
+
+                    {/* Standard Header (Hidden in Speed Mode to reduce clutter?) -> Kept minimal */}
+                    {!isSpeedMode && (
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <p className="text-xs font-mono text-gray-500 uppercase">Questão</p>
+                                <p className="text-3xl font-black italic text-white">
+                                    {currentQuestionIndex + 1} / {questions.length}
+                                </p>
+                            </div>
                             <div className="text-right">
                                 <p className="text-xs font-mono text-gray-500 uppercase">Respondidas</p>
                                 <p className="text-3xl font-black italic text-white">{answeredCount}</p>
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Progress Bar */}
-                    <div className="h-2 bg-[#1a1a1a] border border-[#333]">
-                        <div
-                            className="h-full bg-red-600 transition-all duration-300"
-                            style={{ width: `${progress}%` }}
-                        ></div>
-                    </div>
+                    {/* Progress Bar (Standard) */}
+                    {!isSpeedMode && (
+                        <div className="h-2 bg-[#1a1a1a] border border-[#333]">
+                            <div
+                                className="h-full bg-red-600 transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                            ></div>
+                        </div>
+                    )}
 
-                    {/* Image */}
-                    <div className="gaming-card bg-black border-2 border-[#333] aspect-video flex items-center justify-center p-8">
-                        {currentEquipment?.imagePath ? (
-                            <ZoomableImage
-                                src={currentEquipment.imagePath}
-                                alt="Equipment"
-                                className="max-h-full max-w-full object-contain"
-                            />
-                        ) : (
-                            <div className="text-gray-600">Carregando imagem...</div>
-                        )}
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mt-12 md:mt-0">
+                        {/* Image Section */}
+                        <div className={`gaming-card bg-black border-2 border-[#333] aspect-video flex items-center justify-center p-8 relative overflow-hidden transition-all duration-300 ${inAnswerPhase ? 'blur-xl grayscale opacity-20' : ''}`}>
+                            {currentEquipment?.imagePath ? (
+                                <ZoomableImage
+                                    src={currentEquipment.imagePath}
+                                    alt="Equipment"
+                                    className="max-h-full max-w-full object-contain"
+                                />
+                            ) : (
+                                <div className="text-gray-600">Carregando imagem...</div>
+                            )}
 
-                    {/* Answer Input */}
-                    <div className="space-y-3">
-                        <label className="block text-sm font-mono uppercase text-gray-400">
-                            Digite o nome do equipamento:
-                        </label>
-                        <input
-                            type="text"
-                            value={currentAnswer}
-                            onChange={(e) => handleAnswerChange(e.target.value)}
-                            className="w-full bg-[#111] border-2 border-[#333] text-white px-6 py-4 text-xl font-mono focus:border-red-600 focus:outline-none"
-                            placeholder="Digite aqui..."
-                            autoFocus
-                        />
-                        {currentAnswer && (
-                            <p className="text-xs text-green-500 font-mono flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                Resposta salva automaticamente
-                            </p>
-                        )}
-                    </div>
+                            {/* Overlay message for Answer Phase */}
+                            {inAnswerPhase && (
+                                <div className="absolute inset-0 flex items-center justify-center z-10">
+                                    <div className="text-center">
+                                        <div className="text-6xl mb-2">🔒</div>
+                                        <div className="text-white font-black italic uppercase">IMAGEM OCULTA</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Navigation */}
-                    <div className="flex gap-4">
-                        <button
-                            onClick={() => goToQuestion(currentQuestionIndex - 1)}
-                            disabled={currentQuestionIndex === 0}
-                            className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-red-600 disabled:opacity-30 disabled:cursor-not-allowed flex-1"
-                        >
-                            ← Anterior
-                        </button>
-                        <button
-                            onClick={() => goToQuestion(currentQuestionIndex + 1)}
-                            disabled={currentQuestionIndex === questions.length - 1}
-                            className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-red-600 disabled:opacity-30 disabled:cursor-not-allowed flex-1"
-                        >
-                            Próxima →
-                        </button>
-                    </div>
+                        {/* Input Section */}
+                        <div className="space-y-6">
+                            {/* In Speed Mode, hide input label instructions during observation to reduce distraction */}
+                            <div className={`transition-all duration-300 ${inObservationPhase ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+                                <label className="block text-sm font-mono uppercase text-gray-400 mb-2">
+                                    IDENTIFICAÇÃO DO VETOR:
+                                </label>
+                                <input
+                                    ref={answerInputRef}
+                                    type="text"
+                                    value={currentAnswer}
+                                    onChange={(e) => handleAnswerChange(e.target.value)}
+                                    className="w-full bg-[#111] border-2 border-[#333] text-white px-6 py-4 text-xl font-mono focus:border-red-600 focus:outline-none uppercase"
+                                    placeholder={inObservationPhase ? "AGUARDE..." : "DIGITE O NOME..."}
+                                    disabled={inObservationPhase}
+                                    autoFocus={!isSpeedMode}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            // Optional: Allow submit on enter
+                                            if (isSpeedMode) {
+                                                handleTimeUp(); // Force next
+                                            } else {
+                                                if (currentQuestionIndex < questions.length - 1) goToQuestion(currentQuestionIndex + 1);
+                                            }
+                                        }
+                                    }}
+                                />
+                                {currentAnswer && (
+                                    <p className="text-xs text-green-500 font-mono flex items-center gap-2 mt-2">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        RESPOSTA REGISTRADA
+                                    </p>
+                                )}
+                            </div>
 
-                    {/* Quick Navigation */}
-                    <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-4">
-                        <p className="text-xs text-gray-500 uppercase font-mono mb-3">Navegação Rápida:</p>
-                        <div className="grid grid-cols-10 gap-2">
-                            {questions.map((q, idx) => {
-                                const hasAnswer = answers.get(q.id)?.trim();
-                                const isCurrent = idx === currentQuestionIndex;
-                                return (
+                            {!isSpeedMode && (
+                                <div className="flex gap-4">
                                     <button
-                                        key={q.id}
-                                        onClick={() => goToQuestion(idx)}
-                                        className={`aspect-square border-2 text-sm font-bold transition-all ${isCurrent
-                                            ? 'border-red-600 bg-red-600 text-white'
-                                            : hasAnswer
-                                                ? 'border-green-900 bg-green-900/20 text-green-500'
-                                                : 'border-[#333] text-gray-600 hover:border-red-600'
-                                            }`}
+                                        onClick={() => goToQuestion(currentQuestionIndex - 1)}
+                                        disabled={currentQuestionIndex === 0}
+                                        className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-red-600 disabled:opacity-30 disabled:cursor-not-allowed flex-1 py-4"
                                     >
-                                        {idx + 1}
+                                        ← Anterior
                                     </button>
-                                );
-                            })}
+                                    <button
+                                        onClick={() => goToQuestion(currentQuestionIndex + 1)}
+                                        disabled={currentQuestionIndex === questions.length - 1}
+                                        className="btn-gaming bg-[#1a1a1a] border-[#333] hover:border-red-600 disabled:opacity-30 disabled:cursor-not-allowed flex-1 py-4"
+                                    >
+                                        Próxima →
+                                    </button>
+                                </div>
+                            )}
+
+                            {isSpeedMode && (
+                                <button
+                                    onClick={handleTimeUp}
+                                    className="w-full btn-gaming bg-[#1a1a1a] border border-[#333] hover:border-lime-500 hover:text-lime-500 py-4 text-xs font-mono uppercase"
+                                >
+                                    CONFIRMAR E PULAR (ENTER)
+                                </button>
+                            )}
                         </div>
                     </div>
 
-                    {/* Finish Button */}
-                    <AircraftButton
-                        onClick={finishTest}
-                        label="FINALIZAR PROVA"
-                        color="green"
-                        className="w-full text-xl py-6 mt-8"
-                    />
+
+                    {/* Finish Button (Only standard mode) */}
+                    {!isSpeedMode && (
+                        <AircraftButton
+                            onClick={finishTest}
+                            label="FINALIZAR PROVA"
+                            color="green"
+                            className="w-full text-xl py-6 mt-12"
+                        />
+                    )}
                 </div>
             </DashboardLayout>
         );
