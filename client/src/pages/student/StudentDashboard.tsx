@@ -68,12 +68,9 @@ export function StudentDashboard() {
 
                     <div className="absolute inset-0 flex items-center justify-center z-20">
                         <div className="text-center space-y-2">
-                            <div className="flex items-center justify-center gap-4">
-                                <img src="/assets/Leoall.gif" alt="Logo" className="h-16 w-auto grayscale brightness-150 contrast-125 hover:grayscale-0 transition-all duration-500" />
-                                <h1 className="text-6xl font-black italic text-white uppercase tracking-tighter drop-shadow-2xl">
-                                    <span className="text-red-600">PVO</span> POKER
-                                </h1>
-                            </div>
+                            <h1 className="text-6xl font-black italic text-white uppercase tracking-tighter drop-shadow-2xl">
+                                <span className="text-red-600">PVO</span> POKER
+                            </h1>
                             <p className="text-lg text-gray-300 font-mono uppercase tracking-widest">
                                 SISTEMA DE TREINAMENTO TÁTICO
                             </p>
