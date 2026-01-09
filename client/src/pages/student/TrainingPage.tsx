@@ -267,7 +267,7 @@ export function TrainingPage() {
 
                 {/* LEVEL 3: MODEL DETAILS & GALLERY MODAL */}
                 {selectedModelGroup && currentViewItem && (
-                    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black animate-fade-in" onClick={() => setSelectedModelGroup(null)}>
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in" onClick={() => setSelectedModelGroup(null)}>
                         <div
                             className={`bg-[#0a0a0a] border-2 border-lime-900 w-full transition-all duration-500 ease-in-out h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-[0_0_100px_rgba(101,163,13,0.2)] ${comparingItem || isSelectingCompare ? 'max-w-[95vw]' : 'max-w-[90vw]'}`}
                             onClick={e => e.stopPropagation()}
@@ -281,8 +281,8 @@ export function TrainingPage() {
                                         <h2 className="text-2xl font-black italic text-white uppercase drop-shadow-lg">{currentViewItem.name}</h2>
                                         <div className="flex items-center gap-2">
                                             <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest ${currentViewItem.descriptionSource === 'AI_GENERATED' || (currentViewItem.description && currentViewItem.description.includes('**ANÁLISE PVO:**'))
-                                                    ? 'border-purple-500 text-purple-400 bg-purple-900/40'
-                                                    : 'border-blue-500 text-blue-400 bg-blue-900/40'
+                                                ? 'border-purple-500 text-purple-400 bg-purple-900/40'
+                                                : 'border-blue-500 text-blue-400 bg-blue-900/40'
                                                 }`}>
                                                 {currentViewItem.descriptionSource === 'AI_GENERATED' || (currentViewItem.description && currentViewItem.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}
                                             </span>
@@ -366,8 +366,8 @@ export function TrainingPage() {
                                             <h2 className="text-2xl font-black italic text-white uppercase drop-shadow-lg text-right pr-12">{comparingItem.name}</h2>
                                             <div className="flex items-center gap-2 justify-end pr-12">
                                                 <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest bg-black/50 ${comparingItem.descriptionSource === 'AI_GENERATED' || (comparingItem.description && comparingItem.description.includes('**ANÁLISE PVO:**'))
-                                                        ? 'border-purple-500 text-purple-400'
-                                                        : 'border-blue-500 text-blue-400'
+                                                    ? 'border-purple-500 text-purple-400'
+                                                    : 'border-blue-500 text-blue-400'
                                                     }`}>
                                                     {comparingItem.descriptionSource === 'AI_GENERATED' || (comparingItem.description && comparingItem.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}
                                                 </span>
@@ -480,8 +480,8 @@ export function TrainingPage() {
                                                     {selectedModelGroup.length} VARIAÇÕES
                                                 </span>
                                                 <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest ${currentViewItem.descriptionSource === 'AI_GENERATED' || (currentViewItem.description && currentViewItem.description.includes('**ANÁLISE PVO:**'))
-                                                        ? 'border-purple-500 text-purple-400 bg-purple-900/40'
-                                                        : 'border-blue-500 text-blue-400 bg-blue-900/40'
+                                                    ? 'border-purple-500 text-purple-400 bg-purple-900/40'
+                                                    : 'border-blue-500 text-blue-400 bg-blue-900/40'
                                                     }`}>
                                                     {currentViewItem.descriptionSource === 'AI_GENERATED' || (currentViewItem.description && currentViewItem.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}
                                                 </span>
