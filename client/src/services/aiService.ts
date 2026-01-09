@@ -42,6 +42,7 @@ export const aiService = {
                 // Modo Relatório Padrão (Default Report)
                 prompt = `
             ATUE COMO UM OFICIAL DE INTELIGÊNCIA MILITAR SÊNIOR.
+            RESPONDA SEMPRE EM PORTUGUÊS (PT-BR).
             
             Gere um RELATÓRIO DE INTELIGÊNCIA TÁTICA (INTEL REPORT) sobre o seguinte equipamento:
             Equipamento: ${equipmentName}
@@ -85,6 +86,7 @@ export const aiService = {
 
             const prompt = `
         ATUE COMO UM ANALISTA DE DEFESA.
+        RESPONDA SEMPRE EM PORTUGUÊS (PT-BR).
 
         Realize uma SIMULAÇÃO DE COMBATE E COMPARAÇÃO TÉCNICA entre:
         
