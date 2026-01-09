@@ -215,7 +215,7 @@ export function CountryDetailsPage() {
                 {/* MODAL / COMPARISON SYSTEM */}
                 {selectedEquipment && (
                     <div
-                        className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in"
+                        className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black animate-fade-in"
                         onClick={() => {
                             setSelectedEquipment(null);
                             setComparingItem(null);

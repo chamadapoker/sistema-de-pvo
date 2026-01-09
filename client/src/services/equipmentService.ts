@@ -237,6 +237,38 @@ export const equipmentService = {
     }
   },
 
+  async getOperators(equipmentId: string): Promise<{ id: number; name: string; flagUrl: string }[]> {
+    try {
+      const { data, error } = await supabase
+        .from('country_equipment')
+        .select(`
+          country:country_id (
+            id,
+            name,
+            flag_url
+          )
+        `)
+        .eq('equipment_id', equipmentId);
+
+      if (error) throw error;
+
+      // Extract country data and filter out nulls/duplicates
+      const countries = (data || [])
+        .map((item: any) => ({
+          id: item.country.id,
+          name: item.country.name,
+          flagUrl: item.country.flag_url,
+        }))
+        // Filter unique by ID just in case
+        .filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+
+      return countries;
+    } catch (error) {
+      console.error('Erro ao buscar operadores:', error);
+      return [];
+    }
+  },
+
   async deleteCategory(id: number): Promise<void> {
     try {
       const { error } = await supabase

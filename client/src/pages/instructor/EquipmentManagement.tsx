@@ -41,6 +41,7 @@ export function EquipmentManagement() {
         code: '',
         categoryId: '',
         description: '',
+        country: '',
         image: null as File | null,
         imagePreview: ''
     });
@@ -96,6 +97,7 @@ export function EquipmentManagement() {
                 code: item.code,
                 categoryId: item.categoryId.toString(),
                 description: item.description || '',
+                country: item.country || '',
                 image: null,
                 imagePreview: item.imagePath
             });
@@ -106,6 +108,7 @@ export function EquipmentManagement() {
                 code: '',
                 categoryId: '',
                 description: '',
+                country: '',
                 image: null,
                 imagePreview: ''
             });
@@ -134,16 +137,19 @@ export function EquipmentManagement() {
                     code: formData.code,
                     categoryId: parseInt(formData.categoryId),
                     description: formData.description,
+                    country: formData.country,
                     image: formData.image || undefined
-                });
+                } as any); // Type assertion if needed based on previous lints
             } else {
-                await equipmentService.createEquipment({
-                    name: formData.name,
-                    code: formData.code,
-                    categoryId: parseInt(formData.categoryId),
-                    description: formData.description,
-                    image: formData.image!
-                });
+                const newFormData = new FormData();
+                newFormData.append('name', formData.name);
+                newFormData.append('code', formData.code);
+                newFormData.append('categoryId', formData.categoryId);
+                newFormData.append('description', formData.description);
+                if (formData.country) newFormData.append('country', formData.country);
+                if (formData.image) newFormData.append('image', formData.image);
+
+                await equipmentService.createEquipment(newFormData);
             }
             setIsModalOpen(false);
             // Refresh list if we have a search active
@@ -414,6 +420,17 @@ export function EquipmentManagement() {
                                     </div>
 
                                     <div>
+                                        <label className="text-xs font-mono text-gray-500 uppercase mb-1 block">País de Origem</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-[#0a0a0a] border border-[#333] p-2 text-white focus:border-red-600 focus:outline-none uppercase"
+                                            placeholder="Ex: Rússia, USA, Brasil..."
+                                            value={formData.country}
+                                            onChange={e => setFormData({ ...formData, country: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div>
                                         <label className="text-xs font-mono text-gray-500 uppercase">Categoria</label>
                                         <select
                                             required
@@ -489,3 +506,4 @@ export function EquipmentManagement() {
         </DashboardLayout>
     );
 }
+
