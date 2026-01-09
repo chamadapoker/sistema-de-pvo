@@ -26,6 +26,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     const { user, clearAuth } = useAuthStore();
@@ -124,29 +125,46 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Sidebar Container */}
             <aside className={`
-                fixed lg:sticky left-0 h-screen w-64 bg-[#0a0a0a] border-r border-[#333] z-50 transform transition-transform duration-300 ease-in-out flex flex-col
+                fixed lg:sticky left-0 h-screen bg-[#0a0a0a] border-r border-[#333] z-50 transform transition-all duration-300 ease-in-out flex flex-col
                 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 ${isInstructorOrAdmin && isStudentPath ? 'top-8 h-[calc(100vh-2rem)]' : 'top-0'}
+                ${collapsed ? 'w-20' : 'w-64'}
             `}>
                 {/* Logo Area */}
-                <div className="h-20 flex items-center justify-center border-b border-[#222] gap-3">
+                <div className="h-20 flex items-center justify-center border-b border-[#222] gap-3 relative">
                     <img src="/assets/Leoall.gif" alt="Logo" className="h-10 w-auto mix-blend-screen" />
-                    <div className="text-2xl font-black italic tracking-tighter cursor-default select-none">
-                        <span className="text-white">PVO</span>
-                        <span className="text-red-600">POKER</span>
-                    </div>
+                    {!collapsed && (
+                        <div className="text-2xl font-black italic tracking-tighter cursor-default select-none animate-fade-in">
+                            <span className="text-white">PVO</span>
+                            <span className="text-red-600">POKER</span>
+                        </div>
+                    )}
+
+                    {/* Collapse Toggle Button (Desktop only) */}
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#222] border border-[#333] rounded-full items-center justify-center text-gray-400 hover:text-white hover:border-red-600 transition-colors z-50"
+                    >
+                        {collapsed ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        )}
+                    </button>
                 </div>
 
                 {/* User Info */}
-                <div className="px-4 py-4 border-b border-[#222] bg-[#111]">
+                <div className={`px-4 py-4 border-b border-[#222] bg-[#111] ${collapsed ? 'flex justify-center' : ''}`}>
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-red-900/20 border border-red-900 rounded-full flex items-center justify-center">
+                        <div className="w-10 h-10 bg-red-900/20 border border-red-900 rounded-full flex items-center justify-center shrink-0">
                             <span className="text-red-600 font-bold text-sm">{user?.name?.[0]?.toUpperCase()}</span>
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-white max-w-[150px] truncate" title={user?.name}>{user?.name}</p>
-                            <p className="text-xs text-gray-500 font-mono uppercase">{user?.role}</p>
-                        </div>
+                        {!collapsed && (
+                            <div className="overflow-hidden">
+                                <p className="text-sm font-bold text-white max-w-[150px] truncate" title={user?.name}>{user?.name}</p>
+                                <p className="text-xs text-gray-500 font-mono uppercase">{user?.role}</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -154,13 +172,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <nav className="flex-1 py-6 space-y-1 overflow-y-auto">
                     {/* View Switch Button for Instructors */}
                     {isInstructorOrAdmin && !isStudentPath && (
-                        <div className="px-4 mb-4">
+                        <div className={`px-4 mb-4 ${collapsed ? 'px-2' : ''}`}>
                             <button
                                 onClick={() => navigate('/student/dashboard')}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#111] border border-[#333] hover:border-red-600 text-white text-xs font-bold uppercase transition-all group"
+                                className={`w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#111] border border-[#333] hover:border-red-600 text-white text-xs font-bold uppercase transition-all group ${collapsed ? 'px-0' : ''}`}
+                                title={collapsed ? 'Ver como Aluno' : ''}
                             >
                                 <Icons.Eye />
-                                <span className="group-hover:text-red-600">Ver como Aluno</span>
+                                {!collapsed && <span className="group-hover:text-red-600">Ver como Aluno</span>}
                             </button>
                         </div>
                     )}
@@ -172,11 +191,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             onClick={() => setSidebarOpen(false)}
                             className={`flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-[#1a1a1a] border-l-4 transition-all font-medium ${isActive(item.path)
                                 ? 'text-white bg-[#1a1a1a] border-red-600'
-                                : 'border-transparent hover:border-gray-600'
-                                }`}
+                                : 'border-transparent hover:border-gray-600'}
+                                ${collapsed ? 'justify-center px-0' : ''}
+                                `}
+                            title={collapsed ? item.label : ''}
                         >
                             <item.icon />
-                            <span>{item.label}</span>
+                            {!collapsed && <span>{item.label}</span>}
                         </Link>
                     ))}
                 </nav>
@@ -185,10 +206,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="p-4 border-t border-[#222]">
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 text-gray-500 hover:text-red-500 w-full px-4 py-2 transition-colors text-sm font-medium uppercase tracking-wide"
+                        className={`flex items-center gap-3 text-gray-500 hover:text-red-500 w-full px-4 py-2 transition-colors text-sm font-medium uppercase tracking-wide group ${collapsed ? 'justify-center px-0' : ''}`}
+                        title="Ejetar do Sistema"
                     >
-                        <Icons.LogOut />
-                        <span>Sair do Sistema</span>
+                        {/* Eject Icon */}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:text-red-600 transition-colors">
+                            <path d="M12 2L2 22h20L12 2z"></path>
+                            <path d="M12 17v-6"></path>
+                            <path d="M12 11h.01"></path>
+                        </svg>
+                        {!collapsed && <span>EJETAR</span>}
                     </button>
                 </div>
             </aside>

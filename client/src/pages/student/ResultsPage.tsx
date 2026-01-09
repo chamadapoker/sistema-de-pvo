@@ -5,9 +5,9 @@ export function ResultsPage() {
         <DashboardLayout>
             <div className="space-y-8 animate-fade-in">
                 {/* Header */}
-                <div className="border-b border-purple-900/30 pb-6">
+                <div className="border-b border-red-900/30 pb-6">
                     <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter mb-2">
-                        <span className="text-purple-600">Histórico</span> de Avaliações
+                        <span className="text-red-600">Histórico</span> de Avaliações
                     </h1>
                     <p className="text-sm text-gray-500 font-mono uppercase tracking-widest">
                         Acompanhe seu desempenho ao longo do tempo
@@ -18,7 +18,7 @@ export function ResultsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <div className="text-right">
@@ -66,8 +66,8 @@ export function ResultsPage() {
                 </div>
 
                 {/* No Data Card */}
-                <div className="gaming-card bg-[#0a0a0a] border-2 border-purple-900/50 p-16 text-center">
-                    <svg className="w-32 h-32 mx-auto mb-8 text-purple-600 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="gaming-card bg-[#0a0a0a] border-2 border-red-900/50 p-16 text-center">
+                    <svg className="w-32 h-32 mx-auto mb-8 text-red-600 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     <h2 className="text-3xl font-black italic text-white uppercase mb-4">
@@ -76,7 +76,7 @@ export function ResultsPage() {
                     <p className="text-gray-400 font-mono max-w-2xl mx-auto mb-8">
                         Seu histórico de avaliações aparecerá aqui. Complete sua primeira avaliação para começar a acompanhar seu progresso e desempenho ao longo do tempo.
                     </p>
-                    <a href="/student/test" className="inline-block btn-gaming bg-purple-700 hover:bg-purple-600 border-purple-500">
+                    <a href="/student/test" className="inline-block btn-gaming bg-red-700 hover:bg-red-600 border-red-500">
                         FAZER PRIMEIRA AVALIAÇÃO
                     </a>
                 </div>
@@ -85,7 +85,7 @@ export function ResultsPage() {
                 {/* 
                 <div className="space-y-4">
                     <h3 className="text-xl font-black italic text-white uppercase flex items-center gap-3">
-                        <div className="w-1 h-6 bg-purple-600"></div>
+                        <div className="w-1 h-6 bg-red-600"></div>
                         Últimas Avaliações
                     </h3>
                     

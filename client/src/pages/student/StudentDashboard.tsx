@@ -43,8 +43,8 @@ export function StudentDashboard() {
                 {/* Header Section */}
                 <div className="flex items-center justify-between border-b border-red-900/30 pb-4">
                     <div>
-                        <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter drop-shadow-lg">
-                            <span className="text-red-600">QG</span> <span className="text-gray-600">//</span> OPERACIONAL
+                        <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter drop-shadow-lg">
+                            <span className="text-red-600">DA PÁTRIA OS OLHOS...</span> <span className="text-gray-600">//</span> NA GUERRA E NA PAZ...
                         </h2>
                         <p className="text-xs font-mono text-gray-500 uppercase tracking-widest mt-1">SELECIONE O VETOR PARA ANÁLISE</p>
                     </div>
