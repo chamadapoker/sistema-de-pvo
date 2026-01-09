@@ -9,8 +9,18 @@
 
   body {
     @apply bg-[#050505] text-[#E5E5E5] font-sans antialiased overflow-x-hidden;
-    cursor: crosshair;
-    /* Tactical sight cursor */
+    /* Custom Green Crosshair Cursor */
+    cursor: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16 4V12M16 20V28M4 16H12M20 16H28' stroke='%2322c55e' stroke-width='2' stroke-linecap='square'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2322c55e'/%3E%3C/svg%3E") 16 16, crosshair;
+  }
+
+  /* Interactive Elements - Reticle Cursor (Green Square) */
+  a,
+  button,
+  [role="button"],
+  .cursor-pointer,
+  input,
+  select {
+    cursor: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='10' width='12' height='12' stroke='%2322c55e' stroke-width='2'/%3E%3Cline x1='16' y1='6' x2='16' y2='26' stroke='%2322c55e' stroke-width='1'/%3E%3Cline x1='6' y1='16' x2='26' y2='16' stroke='%2322c55e' stroke-width='1'/%3E%3C/svg%3E") 16 16, pointer;
   }
 
   /* Custom Scrollbar */
