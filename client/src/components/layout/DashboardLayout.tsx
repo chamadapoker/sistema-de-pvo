@@ -206,16 +206,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="p-4 border-t border-[#222]">
                     <button
                         onClick={handleLogout}
-                        className={`flex items-center gap-3 text-gray-500 hover:text-red-500 w-full px-4 py-2 transition-colors text-sm font-medium uppercase tracking-wide group ${collapsed ? 'justify-center px-0' : ''}`}
+                        className={`w-full flex items-center justify-center gap-3 bg-[#f44336] hover:bg-[#d32f2f] text-white font-bold text-lg rounded-lg transition-all duration-100 ease-in-out shadow-[0_4px_0_#b71c1c] active:shadow-none active:translate-y-[4px] ${collapsed ? 'px-0 py-3' : 'px-6 py-3'}`}
                         title="Ejetar do Sistema"
                     >
-                        {/* Eject Icon */}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:text-red-600 transition-colors">
-                            <path d="M12 2L2 22h20L12 2z"></path>
-                            <path d="M12 17v-6"></path>
-                            <path d="M12 11h.01"></path>
-                        </svg>
-                        {!collapsed && <span>EJETAR</span>}
+                        {/* Custom CSS Eject Icon */}
+                        <div className="relative mb-1">
+                            <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-white"></div>
+                            <div className="absolute top-[14px] -left-[8px] w-[16px] h-[3px] bg-white"></div>
+                        </div>
+                        {!collapsed && <span>Ejetar</span>}
                     </button>
                 </div>
             </aside>
