@@ -9,6 +9,8 @@
 
   body {
     @apply bg-[#050505] text-[#E5E5E5] font-sans antialiased overflow-x-hidden;
+    cursor: crosshair;
+    /* Tactical sight cursor */
   }
 
   /* Custom Scrollbar */
