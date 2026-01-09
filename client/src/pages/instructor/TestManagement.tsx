@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { testService, type ScheduledTest } from '../../services/testService';
 import { equipmentService } from '../../services/equipmentService';
-import type { Category } from '../../types';
+import type { Category, Equipment } from '../../types';
 
 export function TestManagement() {
     const [view, setView] = useState<'list' | 'create'>('list');
@@ -18,6 +18,12 @@ export function TestManagement() {
     const [isResultsModalOpen, setIsResultsModalOpen] = useState(false);
     const [selectedTestResults, setSelectedTestResults] = useState<any[]>([]);
     const [selectedTestName, setSelectedTestName] = useState('');
+
+    // Manual Selection State
+    const [selectionMode, setSelectionMode] = useState<'RANDOM' | 'MANUAL'>('RANDOM');
+    const [availableEquipments, setAvailableEquipments] = useState<Equipment[]>([]);
+    const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+    const [loadingEquipments, setLoadingEquipments] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -35,6 +41,20 @@ export function TestManagement() {
         loadData();
     }, []);
 
+    // Effect to load equipments when in Manual mode and category changes
+    useEffect(() => {
+        if (selectionMode === 'MANUAL' && formData.category_id) {
+            loadCategoryEquipments(Number(formData.category_id));
+        } else if (selectionMode === 'MANUAL' && !formData.category_id) {
+            // "All Categories" selected in manual mode? 
+            // We might want to prevent this or fetch ALL equipments (might be too many).
+            // For now let's support it if needed or warn user.
+            // Let's assume we fetch all if mixed, or force category selection. 
+            // Ideally, fetch all but paginated? No, let's just fetch all for now, it's not huge yet.
+            loadAllEquipments();
+        }
+    }, [formData.category_id, selectionMode]);
+
     const loadData = async () => {
         try {
             const [testsData, categoriesData] = await Promise.all([
@@ -47,6 +67,32 @@ export function TestManagement() {
             console.error('Error loading data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadCategoryEquipments = async (catId: number) => {
+        setLoadingEquipments(true);
+        try {
+            const { equipment } = await equipmentService.getAllEquipment({ categoryId: catId });
+            setAvailableEquipments(equipment);
+        } catch (error) {
+            console.error("Error loading equipments", error);
+        } finally {
+            setLoadingEquipments(false);
+        }
+    };
+
+    const loadAllEquipments = async () => {
+        setLoadingEquipments(true);
+        try {
+            // Passing empty object usually fetches all or default page
+            // We might need a specific backend endpoint for "All", but let's try.
+            const { equipment } = await equipmentService.getAllEquipment({});
+            setAvailableEquipments(equipment);
+        } catch (error) {
+            console.error("Error loading equipments", error);
+        } finally {
+            setLoadingEquipments(false);
         }
     };
 
@@ -76,14 +122,14 @@ export function TestManagement() {
             scheduled_date: '',
             location: '',
         });
+        setSelectionMode('RANDOM');
+        setSelectedQuestions([]);
         setView('create');
     };
 
     const handleEditClick = (test: ScheduledTest) => {
         setEditingTestId(test.id);
         const testDate = new Date(test.createdAt);
-        // Adjust for timezone offset if necessary, but ISO slice(0,16) is a quick hack for datetime-local
-        // Better to use local time for the input
         const localDate = new Date(testDate.getTime() - (testDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 
         setFormData({
@@ -92,20 +138,54 @@ export function TestManagement() {
             category_id: (test as any).categoryId?.toString() || '',
             question_count: test.questionCount,
             time_per_question: test.duration ? (Math.round(test.duration / (test.questionCount || 1))) : 15,
-            passing_score: test.passingScore,
+            passing_score: (test as any).passingScore || 70,
             scheduled_date: localDate,
-            location: test.location || '',
+            location: (test as any).location || '',
         });
+
+        // For simplicity, we don't load the existing questions for manual editing
+        // user stays in RANDOM mode unless they opt to change it
+        setSelectionMode('RANDOM');
+        setSelectedQuestions([]);
+
         setView('create');
+    };
+
+    const toggleQuestionSelection = (id: string) => {
+        setSelectedQuestions(prev => {
+            if (prev.includes(id)) {
+                return prev.filter(q => q !== id);
+            } else {
+                return [...prev, id];
+            }
+        });
+    };
+
+    const selectAllQuestions = () => {
+        if (selectedQuestions.length === availableEquipments.length) {
+            setSelectedQuestions([]);
+        } else {
+            setSelectedQuestions(availableEquipments.map(e => e.id));
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const payload = {
+            const payload: any = {
                 ...formData,
                 category_id: formData.category_id ? parseInt(formData.category_id) : undefined
             };
+
+            // If Manual, override question count and pass questions
+            if (selectionMode === 'MANUAL') {
+                if (selectedQuestions.length === 0) {
+                    alert('Selecione ao menos uma questão (equipamento) no modo Manual!');
+                    return;
+                }
+                payload.questions = selectedQuestions;
+                payload.question_count = selectedQuestions.length;
+            }
 
             if (editingTestId) {
                 await testService.updateTest(editingTestId, payload);
@@ -249,20 +329,26 @@ export function TestManagement() {
                         <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-8 space-y-6">
                             <h3 className="text-xl font-black italic text-green-600 uppercase mb-4">Configuração da Prova</h3>
 
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-mono uppercase text-gray-400 mb-2">Nº Questões</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="100"
-                                        required
-                                        value={formData.question_count}
-                                        onChange={(e) => setFormData({ ...formData, question_count: parseInt(e.target.value) })}
-                                        className="w-full bg-[#111] border-2 border-[#333] text-white px-4 py-3 font-mono focus:border-green-600 focus:outline-none"
-                                    />
-                                    {editingTestId && <p className="text-[10px] text-red-500 font-mono">⚠️ Editar pode regenerar questões</p>}
-                                </div>
+                            {/* SELECTION MODE TOGGLE */}
+                            <div className="flex bg-[#111] p-1 rounded-sm border border-[#333] mb-6 w-fit">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectionMode('RANDOM')}
+                                    className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${selectionMode === 'RANDOM' ? 'bg-green-700 text-white' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    Aleatório
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectionMode('MANUAL')}
+                                    className={`px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all ${selectionMode === 'MANUAL' ? 'bg-green-700 text-white' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    Manual (Seleção)
+                                </button>
+                            </div>
+
+                            {/* DURATION & SCORE SETTINGS */}
+                            <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label className="block text-sm font-mono uppercase text-gray-400 mb-2">Tempo/Questão (s)</label>
                                     <input
@@ -288,6 +374,77 @@ export function TestManagement() {
                                     />
                                 </div>
                             </div>
+
+                            {/* QUESTIONS CONFIG */}
+                            {selectionMode === 'RANDOM' ? (
+                                <div>
+                                    <label className="block text-sm font-mono uppercase text-gray-400 mb-2">Nº Questões (Aleatórias)</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="100"
+                                        required
+                                        value={formData.question_count}
+                                        onChange={(e) => setFormData({ ...formData, question_count: parseInt(e.target.value) })}
+                                        className="w-full bg-[#111] border-2 border-[#333] text-white px-4 py-3 font-mono focus:border-green-600 focus:outline-none"
+                                    />
+                                    {editingTestId && <p className="text-[10px] text-red-500 font-mono mt-1">⚠️ Editar pode regenerar questões</p>}
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="block text-sm font-mono uppercase text-gray-400">Questões Selecionadas ({selectedQuestions.length})</label>
+                                        <button
+                                            type="button"
+                                            onClick={selectAllQuestions}
+                                            className="text-xs text-green-500 hover:underline cursor-pointer"
+                                        >
+                                            {selectedQuestions.length === availableEquipments.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                                        </button>
+                                    </div>
+
+                                    {loadingEquipments ? (
+                                        <div className="p-8 text-center border-2 border-dashed border-[#333] text-gray-500 font-mono">
+                                            Carregando equipamentos da bateria...
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 max-h-[400px] overflow-y-auto p-2 border border-[#333] bg-[#0f0f0f]">
+                                            {availableEquipments.length === 0 ? (
+                                                <div className="col-span-full p-4 text-center text-gray-500 font-mono">
+                                                    Nenhum equipamento encontrado nesta bateria.
+                                                </div>
+                                            ) : (
+                                                availableEquipments.map(eq => {
+                                                    const isSelected = selectedQuestions.includes(eq.id);
+                                                    return (
+                                                        <div
+                                                            key={eq.id}
+                                                            onClick={() => toggleQuestionSelection(eq.id)}
+                                                            className={`relative aspect-square cursor-pointer border-2 transition-all ${isSelected ? 'border-green-600 opacity-100' : 'border-[#222] opacity-60 hover:border-gray-500 hover:opacity-100'}`}
+                                                        >
+                                                            <img
+                                                                src={eq.thumbnailPath || eq.imagePath}
+                                                                alt={eq.name}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                            {isSelected && (
+                                                                <div className="absolute inset-0 bg-green-900/40 flex items-center justify-center">
+                                                                    <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+                                                                </div>
+                                                            )}
+                                                            <div className="absolute bottom-0 left-0 w-full bg-black/80 text-[10px] text-white p-1 truncate font-mono text-center">
+                                                                {eq.name}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+                                    )}
+                                    <p className="text-[10px] text-gray-500 font-mono mt-2">Clique nos equipamentos para adicionar à prova.</p>
+                                </div>
+                            )}
+
                         </div>
 
                         {/* Schedule */}
@@ -318,7 +475,7 @@ export function TestManagement() {
                             </div>
                         </div>
 
-                        <button type="submit" className="w-full btn-gaming bg-green-700 hover:bg-green-600 border-green-500 py-4 text-xl">
+                        <button type="submit" className="w-full btn-gaming bg-green-700 hover:bg-green-600 border-green-500 py-4 text-xl shadow-[0_0_20px_rgba(22,163,74,0.4)]">
                             {editingTestId ? 'SALVAR ALTERAÇÕES' : 'CRIAR AVALIAÇÃO'}
                         </button>
                     </form>

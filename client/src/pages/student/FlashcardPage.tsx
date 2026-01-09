@@ -6,6 +6,7 @@ import type { Category, Equipment } from '../../types';
 
 type Mode = 'MENTAL' | 'TYPING';
 type Step = 'SELECT_BATTERY' | 'CONFIGURE' | 'STUDY' | 'SUMMARY';
+type SelectionMode = 'RANDOM' | 'MANUAL';
 
 export function FlashcardPage() {
     // Navigation State
@@ -18,7 +19,11 @@ export function FlashcardPage() {
     // Configuration
     const [itemCount, setItemCount] = useState(10);
     const [mode, setMode] = useState<Mode>('MENTAL');
+    const [selectionMode, setSelectionMode] = useState<SelectionMode>('RANDOM');
+    const [availableEquipments, setAvailableEquipments] = useState<Equipment[]>([]);
+    const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingEquipments, setLoadingEquipments] = useState(false);
 
     // Study State
     const [cards, setCards] = useState<Equipment[]>([]);
@@ -36,18 +41,70 @@ export function FlashcardPage() {
         equipmentService.getCategories().then(res => setCategories(res.categories));
     }, []);
 
+    // Fetch equipments when entering configuration if needed, or when switching to manual
+    useEffect(() => {
+        if (selectedCat && selectionMode === 'MANUAL' && availableEquipments.length === 0) {
+            loadCategoryEquipments(selectedCat);
+        }
+    }, [selectedCat, selectionMode]);
+
+    const loadCategoryEquipments = async (catId: number) => {
+        setLoadingEquipments(true);
+        try {
+            const { equipment } = await equipmentService.getAllEquipment({ categoryId: catId });
+            setAvailableEquipments(equipment);
+        } catch (error) {
+            console.error("Error loading equipments", error);
+        } finally {
+            setLoadingEquipments(false);
+        }
+    };
+
     const selectBattery = (catId: number) => {
         setSelectedCat(catId);
+        setSelectionMode('RANDOM'); // Reset to default
+        setAvailableEquipments([]);
+        setSelectedEquipmentIds([]);
         setStep('CONFIGURE');
+    };
+
+    const toggleEquipmentSelection = (id: string) => {
+        setSelectedEquipmentIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const selectAllEquipments = () => {
+        if (selectedEquipmentIds.length === availableEquipments.length) {
+            setSelectedEquipmentIds([]);
+        } else {
+            setSelectedEquipmentIds(availableEquipments.map(e => e.id));
+        }
     };
 
     const startSession = async () => {
         if (!selectedCat) return;
         setLoading(true);
         try {
-            const { equipment } = await equipmentService.getAllEquipment({ categoryId: selectedCat });
-            const shuffled = [...equipment].sort(() => Math.random() - 0.5).slice(0, itemCount);
-            setCards(shuffled);
+            let sessionCards: Equipment[] = [];
+
+            if (selectionMode === 'MANUAL') {
+                if (selectedEquipmentIds.length === 0) {
+                    alert('Selecione pelo menos um equipamento!');
+                    setLoading(false);
+                    return;
+                }
+                // Filter selected from available
+                sessionCards = availableEquipments.filter(e => selectedEquipmentIds.includes(e.id));
+                // Shuffle them for the session (optional, but good for flashcards)
+                sessionCards = sessionCards.sort(() => Math.random() - 0.5);
+            } else {
+                // RANDOM MODE
+                const { equipment } = await equipmentService.getAllEquipment({ categoryId: selectedCat });
+                sessionCards = [...equipment].sort(() => Math.random() - 0.5).slice(0, itemCount);
+            }
+
+            setCards(sessionCards);
             setCurrentIndex(0);
             setCorrectCount(0);
             setStep('STUDY');
@@ -160,105 +217,144 @@ export function FlashcardPage() {
 
                     {/* Configuration Grid - Full Width */}
                     <div className="grid grid-cols-1 gap-8">
-                        {/* Mode Selection - Large Cards */}
+                        {/* 1. Mode Selection */}
                         <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-8">
-                            <h3 className="text-2xl font-black text-white uppercase italic mb-6 text-red-500 flex items-center gap-3">
-                                <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                            <h3 className="text-xl font-black text-white uppercase italic mb-6 text-red-500 flex items-center gap-3">
+                                <div className="w-2 h-2 bg-red-600 rounded-full"></div>
                                 1. Selecione o Modo de Treino
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <button
                                     onClick={() => setMode('MENTAL')}
-                                    className={`group relative aspect-[3/2] overflow-hidden border-2 transition-all ${mode === 'MENTAL' ? 'border-red-500 bg-red-900/20 shadow-[0_0_30px_rgba(220,38,38,0.3)]' : 'border-[#333] hover:border-red-600 bg-[#111]'}`}
+                                    className={`group relative aspect-[3/1] overflow-hidden border-2 transition-all ${mode === 'MENTAL' ? 'border-red-500 bg-red-900/20' : 'border-[#333] hover:border-red-600 bg-[#111]'}`}
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-br from-red-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    <div className="relative z-10 h-full flex flex-col items-center justify-center gap-4 p-6">
-                                        {/* SVG Icon - Card Flip */}
-                                        <svg className="w-20 h-20 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="relative z-10 h-full flex items-center justify-start gap-4 p-6">
+                                        <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
-                                        <div>
-                                            <div className="text-xl font-black uppercase tracking-widest text-white mb-1">Modo Mental</div>
+                                        <div className="text-left">
+                                            <div className="text-lg font-black uppercase tracking-widest text-white">Modo Mental</div>
                                             <div className="text-xs text-gray-400 font-mono">Visualização e Memorização</div>
                                         </div>
                                     </div>
-                                    {mode === 'MENTAL' && (
-                                        <div className="absolute top-3 right-3 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                    )}
+                                    {mode === 'MENTAL' && <div className="absolute top-2 right-2 text-red-500 text-xs font-black">ACTIVE</div>}
                                 </button>
                                 <button
                                     onClick={() => setMode('TYPING')}
-                                    className={`group relative aspect-[3/2] overflow-hidden border-2 transition-all ${mode === 'TYPING' ? 'border-red-500 bg-red-900/20 shadow-[0_0_30px_rgba(220,38,38,0.3)]' : 'border-[#333] hover:border-red-600 bg-[#111]'}`}
+                                    className={`group relative aspect-[3/1] overflow-hidden border-2 transition-all ${mode === 'TYPING' ? 'border-red-500 bg-red-900/20' : 'border-[#333] hover:border-red-600 bg-[#111]'}`}
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-br from-red-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    <div className="relative z-10 h-full flex flex-col items-center justify-center gap-4 p-6">
-                                        {/* SVG Icon - Keyboard */}
-                                        <svg className="w-20 h-20 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div className="relative z-10 h-full flex items-center justify-start gap-4 p-6">
+                                        <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                         </svg>
-                                        <div>
-                                            <div className="text-xl font-black uppercase tracking-widest text-white mb-1">Modo Digitação</div>
+                                        <div className="text-left">
+                                            <div className="text-lg font-black uppercase tracking-widest text-white">Modo Digitação</div>
                                             <div className="text-xs text-gray-400 font-mono">Teste de Resposta Rápida</div>
                                         </div>
                                     </div>
-                                    {mode === 'TYPING' && (
-                                        <div className="absolute top-3 right-3 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                    )}
+                                    {mode === 'TYPING' && <div className="absolute top-2 right-2 text-red-500 text-xs font-black">ACTIVE</div>}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Quantity Selection */}
+                        {/* 2. Selection Logic */}
                         <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-8">
-                            <h3 className="text-2xl font-black text-white uppercase italic mb-6 text-red-500 flex items-center gap-3">
-                                <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
-                                2. Defina a Quantidade de Cards
+                            <h3 className="text-xl font-black text-white uppercase italic mb-6 text-red-500 flex items-center gap-3">
+                                <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                                2. Configurar Itens
                             </h3>
-                            <div className="grid grid-cols-3 gap-6">
-                                {[10, 30, 60].map(n => (
-                                    <button
-                                        key={n}
-                                        onClick={() => setItemCount(n)}
-                                        className={`group relative aspect-square border-2 transition-all overflow-hidden ${itemCount === n
-                                            ? 'bg-red-600 border-red-600 text-white shadow-[0_0_25px_rgba(220,38,38,0.5)]'
-                                            : 'bg-[#111] border-[#333] text-gray-400 hover:border-red-600'
-                                            }`}
-                                    >
-                                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        <div className="relative z-10 h-full flex flex-col items-center justify-center">
-                                            <div className="text-5xl font-black italic mb-2">{n}</div>
-                                            <div className="text-xs uppercase tracking-widest">Cards</div>
-                                        </div>
-                                        {itemCount === n && (
-                                            <div className="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center">
-                                                <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                </svg>
+
+                            {/* Logic Toggle */}
+                            <div className="flex bg-[#111] p-1 rounded-sm border border-[#333] mb-8 w-fit">
+                                <button
+                                    onClick={() => setSelectionMode('RANDOM')}
+                                    className={`px-6 py-2 text-sm font-bold uppercase tracking-widest transition-all ${selectionMode === 'RANDOM' ? 'bg-red-600 text-white' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    Aleatório
+                                </button>
+                                <button
+                                    onClick={() => setSelectionMode('MANUAL')}
+                                    className={`px-6 py-2 text-sm font-bold uppercase tracking-widest transition-all ${selectionMode === 'MANUAL' ? 'bg-red-600 text-white' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    Seleção Manual
+                                </button>
+                            </div>
+
+                            {/* Content based on Selection Mode */}
+                            {selectionMode === 'RANDOM' ? (
+                                <div className="animate-fade-in">
+                                    <p className="text-gray-400 mb-4 font-mono text-sm">Quantos itens você deseja treinar nesta sessão?</p>
+                                    <div className="grid grid-cols-3 gap-6 max-w-lg">
+                                        {[10, 30, 60].map(n => (
+                                            <button
+                                                key={n}
+                                                onClick={() => setItemCount(n)}
+                                                className={`group relative aspect-square border-2 transition-all overflow-hidden ${itemCount === n
+                                                    ? 'bg-red-600 border-red-600 text-white shadow-[0_0_25px_rgba(220,38,38,0.5)]'
+                                                    : 'bg-[#111] border-[#333] text-gray-400 hover:border-red-600'
+                                                    }`}
+                                            >
+                                                <div className="relative z-10 h-full flex flex-col items-center justify-center">
+                                                    <div className="text-5xl font-black italic mb-2">{n}</div>
+                                                    <div className="text-xs uppercase tracking-widest">Cards</div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="animate-fade-in">
+                                    {loadingEquipments ? (
+                                        <div className="text-center py-10 text-gray-500 font-mono">Carregando equipamentos da bateria...</div>
+                                    ) : (
+                                        <>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <div className="text-sm font-mono text-gray-400">
+                                                    Selecione os equipamentos para estudo: <span className="text-white">{selectedEquipmentIds.length}</span> selecionados
+                                                </div>
+                                                <button onClick={selectAllEquipments} className="text-xs text-red-500 hover:text-red-400 font-mono uppercase underline">
+                                                    {selectedEquipmentIds.length === availableEquipments.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                                                </button>
                                             </div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="mt-6 text-center text-sm text-gray-400 font-mono">
-                                💡 Total: <span className="text-white font-bold">{itemCount}</span> flashcards no treino
-                            </div>
+
+                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-[400px] overflow-y-auto p-2 border border-[#333] bg-[#0f0f0f]">
+                                                {availableEquipments.map(eq => {
+                                                    const isSelected = selectedEquipmentIds.includes(eq.id);
+                                                    return (
+                                                        <button
+                                                            key={eq.id}
+                                                            onClick={() => toggleEquipmentSelection(eq.id)}
+                                                            className={`relative aspect-square border-2 group transition-all ${isSelected ? 'border-red-600 opacity-100' : 'border-[#222] opacity-50 hover:opacity-100 hover:border-gray-500'}`}
+                                                        >
+                                                            <img src={eq.thumbnailPath || eq.imagePath} alt={eq.name} className="w-full h-full object-cover" />
+                                                            {isSelected && (
+                                                                <div className="absolute inset-0 bg-red-900/40 flex items-center justify-center">
+                                                                    <div className="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+                                                                </div>
+                                                            )}
+                                                            <div className="absolute bottom-0 left-0 w-full bg-black/80 text-[10px] text-white p-1 truncate font-mono">
+                                                                {eq.name}
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* Start Button */}
-                    <div className="pt-8 text-center">
+                    <div className="pt-8 text-center pb-20">
                         <button
                             onClick={startSession}
-                            disabled={loading}
-                            className="btn-gaming w-full max-w-md mx-auto text-xl py-6 bg-red-600 hover:bg-red-500 border-2 border-red-400 shadow-[0_0_30px_rgba(220,38,38,0.4)]"
+                            disabled={loading || (selectionMode === 'MANUAL' && selectedEquipmentIds.length === 0)}
+                            className={`btn-gaming w-full max-w-md mx-auto text-xl py-6 border-2 shadow-[0_0_30px_rgba(220,38,38,0.4)] ${loading || (selectionMode === 'MANUAL' && selectedEquipmentIds.length === 0)
+                                    ? 'bg-[#222] border-[#333] text-gray-500 cursor-not-allowed'
+                                    : 'bg-red-600 hover:bg-red-500 border-red-400 text-white'
+                                }`}
                         >
                             {loading ? 'CARREGANDO DADOS...' : 'INICIAR EXERCÍCIO'}
                         </button>
@@ -268,7 +364,7 @@ export function FlashcardPage() {
         );
     }
 
-    // STEP 3: STUDY (Keep existing study logic)
+    // STEP 3: STUDY (Existing logic)
     if (step === 'STUDY') {
         const current = cards[currentIndex];
         const progress = ((currentIndex + 1) / cards.length) * 100;

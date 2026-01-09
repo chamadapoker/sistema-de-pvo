@@ -4,8 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { testService, type ScheduledTest, type TestQuestion, type TestAttempt } from '../../services/testService';
 import { equipmentService } from '../../services/equipmentService';
+import { TestAnswerSheet } from '../../components/features/TestAnswerSheet';
+import { AircraftButton } from '../../components/ui/AircraftButton';
 
 type TestState = 'LOADING' | 'READY' | 'IN_PROGRESS' | 'FINISHED';
+type ViewMode = 'CARD' | 'SHEET'; // Card is the standard image-focused view, Sheet is the retro grid
 
 export function TakeTestPage() {
     const { testId } = useParams<{ testId: string }>();
@@ -21,6 +24,9 @@ export function TakeTestPage() {
     const [answers, setAnswers] = useState<Map<string, string>>(new Map());
     const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
 
+    // View Mode State
+    const [viewMode, setViewMode] = useState<ViewMode>('CARD');
+
     useEffect(() => {
         if (testId) {
             loadTest();
@@ -30,18 +36,21 @@ export function TakeTestPage() {
     // Auto-save quando resposta muda
     useEffect(() => {
         if (state === 'IN_PROGRESS' && attempt) {
-            const currentQuestion = questions[currentQuestionIndex];
-            const answer = answers.get(currentQuestion?.id);
+            // In Sheet mode, we save whichever changed. The sheet component calls handleAnswerChange directly.
+            // But for the 'current' question concept in CARD mode:
+            if (viewMode === 'CARD') {
+                const currentQuestion = questions[currentQuestionIndex];
+                const answer = answers.get(currentQuestion?.id);
 
-            if (answer && currentQuestion) {
-                const debounce = setTimeout(() => {
-                    saveAnswer(currentQuestion.id, answer);
-                }, 2000); // Auto-save após 2s de inatividade
-
-                return () => clearTimeout(debounce);
+                if (answer !== undefined && currentQuestion) {
+                    const debounce = setTimeout(() => {
+                        saveAnswer(currentQuestion.id, answer);
+                    }, 2000);
+                    return () => clearTimeout(debounce);
+                }
             }
         }
-    }, [answers, currentQuestionIndex, state, attempt]);
+    }, [answers, currentQuestionIndex, state, attempt, viewMode]);
 
     const loadTest = async () => {
         try {
@@ -102,6 +111,7 @@ export function TakeTestPage() {
     const saveAnswer = async (questionId: string, answerText: string) => {
         if (!attempt) return;
 
+        // Note: Time tracking is less precise in Sheet mode (bulk entry), but we do what we can.
         const timeSpentOnQuestion = Math.floor((Date.now() - questionStartTime) / 1000);
 
         try {
@@ -116,20 +126,31 @@ export function TakeTestPage() {
         }
     };
 
-    const handleAnswerChange = (value: string) => {
-        const currentQuestion = questions[currentQuestionIndex];
-        if (currentQuestion) {
-            setAnswers(prev => new Map(prev).set(currentQuestion.id, value));
+    const handleAnswerChange = (value: string, specificQuestionId?: string) => {
+        const qId = specificQuestionId || questions[currentQuestionIndex]?.id;
+        if (qId) {
+            setAnswers(prev => new Map(prev).set(qId, value));
+            // For Manual Sheet mode, we might want to trigger save immediately or denounce logic per field
+            // Reusing the effect for simplicity, but explicit save call here for Sheet mode might be better safeguard
+            if (viewMode === 'SHEET') {
+                // Debounce handling could be complex for multiple fields, 
+                // simply updating state triggers the Effect if we tracked 'answers' broadly, 
+                // but the Effect only looks at 'currentQuestion'.
+                // So for Sheet Mode, we should probably auto-save explicitly here with a small debounce or just fire-and-forget
+                saveAnswer(qId, value);
+            }
         }
     };
 
     const goToQuestion = async (index: number) => {
-        // Salvar resposta atual antes de trocar
-        const currentQuestion = questions[currentQuestionIndex];
-        const currentAnswer = answers.get(currentQuestion?.id);
+        // Salvar resposta atual antes de trocar (only needed for Card mode really)
+        if (viewMode === 'CARD') {
+            const currentQuestion = questions[currentQuestionIndex];
+            const currentAnswer = answers.get(currentQuestion?.id);
 
-        if (currentAnswer && currentQuestion && attempt) {
-            await saveAnswer(currentQuestion.id, currentAnswer);
+            if (currentAnswer && currentQuestion && attempt) {
+                await saveAnswer(currentQuestion.id, currentAnswer);
+            }
         }
 
         setCurrentQuestionIndex(index);
@@ -142,11 +163,13 @@ export function TakeTestPage() {
         if (!attempt) return;
 
         try {
-            // Salvar última resposta
-            const currentQuestion = questions[currentQuestionIndex];
-            const currentAnswer = answers.get(currentQuestion?.id);
-            if (currentAnswer && currentQuestion) {
-                await saveAnswer(currentQuestion.id, currentAnswer);
+            // Salvar última resposta (Card mode)
+            if (viewMode === 'CARD') {
+                const currentQuestion = questions[currentQuestionIndex];
+                const currentAnswer = answers.get(currentQuestion?.id);
+                if (currentAnswer && currentQuestion) {
+                    await saveAnswer(currentQuestion.id, currentAnswer);
+                }
             }
 
             // Finalizar tentativa
@@ -191,6 +214,26 @@ export function TakeTestPage() {
                         <p className="text-gray-400 font-mono">{test.description}</p>
                     </div>
 
+                    {/* Mode Selection Introduction */}
+                    <div className="flex justify-center gap-4 mb-8">
+                        <div
+                            onClick={() => setViewMode('CARD')}
+                            className={`cursor-pointer border-2 p-4 w-40 hover:border-red-500 transition-all ${viewMode === 'CARD' ? 'bg-red-900/20 border-red-500' : 'bg-[#111] border-[#333]'}`}
+                        >
+                            <div className="text-xl mb-2">💻</div>
+                            <div className="text-xs font-bold uppercase">Modo Online</div>
+                            <div className="text-[10px] text-gray-400">Padrão com Imagens</div>
+                        </div>
+                        <div
+                            onClick={() => setViewMode('SHEET')}
+                            className={`cursor-pointer border-2 p-4 w-40 hover:border-red-500 transition-all ${viewMode === 'SHEET' ? 'bg-red-900/20 border-red-500' : 'bg-[#111] border-[#333]'}`}
+                        >
+                            <div className="text-xl mb-2">📝</div>
+                            <div className="text-xs font-bold uppercase">Modo Sala</div>
+                            <div className="text-[10px] text-gray-400">Folha de Resposta</div>
+                        </div>
+                    </div>
+
                     <div className="gaming-card bg-[#0a0a0a] border border-[#333] p-8 text-left">
                         <h3 className="text-xl font-black italic text-white uppercase mb-4">Instruções</h3>
                         <ul className="space-y-3 text-gray-300">
@@ -200,29 +243,16 @@ export function TakeTestPage() {
                             </li>
                             <li className="flex items-start gap-3">
                                 <span className="text-red-600">▸</span>
-                                <span>Suas respostas são <strong>salvas automaticamente</strong> a cada 2 segundos</span>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-red-600">▸</span>
-                                <span>Você pode <strong>navegar entre questões</strong> livremente</span>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-red-600">▸</span>
-                                <span>Digite o <strong>nome do equipamento</strong> mostrado na foto</span>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <span className="text-red-600">▸</span>
-                                <span>Após finalizar, aguarde a <strong>correção do instrutor</strong></span>
+                                <span>Modo Selecionado: <strong>{viewMode === 'CARD' ? 'ONLINE (Completo)' : 'SALA DE AULA (Apenas Folha)'}</strong></span>
                             </li>
                         </ul>
                     </div>
 
-                    <button
+                    <AircraftButton
                         onClick={startTest}
-                        className="btn-gaming bg-red-700 hover:bg-red-600 border-red-500 w-full py-6 text-2xl"
-                    >
-                        🚀 INICIAR PROVA AGORA
-                    </button>
+                        label="INICIAR PROVA AGORA"
+                        className="w-full text-xl py-6"
+                    />
                 </div>
             </DashboardLayout>
         );
@@ -230,6 +260,36 @@ export function TakeTestPage() {
 
     // IN PROGRESS
     if (state === 'IN_PROGRESS' && questions.length > 0) {
+
+        // --- SHEET VIEW RENDER ---
+        if (viewMode === 'SHEET') {
+            const answeredCount = Array.from(answers.values()).filter(a => a.trim()).length;
+            return (
+                <div className="min-h-screen bg-[#111] p-4 flex flex-col items-center justify-start pt-10">
+                    {/* Simplified Header for Sheet Mode */}
+                    <div className="w-full max-w-5xl flex justify-between items-center mb-6">
+                        <button onClick={() => navigate('/student/dashboard')} className="text-gray-500 hover:text-white font-mono text-sm">
+                            ← SAIR
+                        </button>
+                        <div className="flex gap-2">
+                            <button onClick={() => setViewMode('CARD')} className="px-3 py-1 border border-gray-600 text-xs text-gray-400 hover:text-white hover:border-white uppercase font-mono">
+                                Alternar para Modo Online
+                            </button>
+                        </div>
+                    </div>
+
+                    <TestAnswerSheet
+                        questions={questions}
+                        answers={answers}
+                        onAnswerChange={(qId, val) => handleAnswerChange(val, qId)}
+                        onFinish={finishTest}
+                        answeredCount={answeredCount}
+                    />
+                </div>
+            );
+        }
+
+        // --- CARD VIEW RENDER (Original) ---
         const currentQuestion = questions[currentQuestionIndex];
         const currentEquipment = equipmentData.get(currentQuestion.equipment_id);
         const currentAnswer = answers.get(currentQuestion.id) || '';
@@ -247,9 +307,18 @@ export function TakeTestPage() {
                                 {currentQuestionIndex + 1} / {questions.length}
                             </p>
                         </div>
-                        <div className="text-right">
-                            <p className="text-xs font-mono text-gray-500 uppercase">Respondidas</p>
-                            <p className="text-3xl font-black italic text-white">{answeredCount}</p>
+                        <div className="flex items-center gap-4">
+                            {/* Toggle Button */}
+                            <button
+                                onClick={() => setViewMode('SHEET')}
+                                className="px-3 py-1 border border-gray-600 bg-[#111] text-xs font-mono text-gray-400 hover:text-white hover:border-white uppercase"
+                            >
+                                📝 Ver Folha
+                            </button>
+                            <div className="text-right">
+                                <p className="text-xs font-mono text-gray-500 uppercase">Respondidas</p>
+                                <p className="text-3xl font-black italic text-white">{answeredCount}</p>
+                            </div>
                         </div>
                     </div>
 
@@ -341,12 +410,12 @@ export function TakeTestPage() {
                     </div>
 
                     {/* Finish Button */}
-                    <button
+                    <AircraftButton
                         onClick={finishTest}
-                        className="w-full btn-gaming bg-green-700 hover:bg-green-600 border-green-500 py-4 text-xl"
-                    >
-                        ✓ FINALIZAR PROVA
-                    </button>
+                        label="FINALIZAR PROVA"
+                        color="green"
+                        className="w-full text-xl py-6 mt-8"
+                    />
                 </div>
             </DashboardLayout>
         );
