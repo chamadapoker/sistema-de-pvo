@@ -38,6 +38,7 @@ export interface Equipment {
   country?: string;
   manufacturer?: string;
   year?: number;
+  descriptionSource?: 'MANUAL' | 'AI_GENERATED';
   createdAt: string;
   updatedAt: string;
 }

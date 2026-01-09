@@ -57,7 +57,8 @@ with open("auto_generated_descriptions.sql", "w", encoding="utf-8") as f:
             
             sql = f"""
 UPDATE equipment 
-SET description = '{texto_gerado}' 
+SET description = '{texto_gerado}',
+    description_source = 'AI_GENERATED'
 WHERE name ILIKE '%{nome}%' AND (description IS NULL OR description = '');
 """
             f.write(sql)

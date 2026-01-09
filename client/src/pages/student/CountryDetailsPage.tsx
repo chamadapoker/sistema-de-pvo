@@ -4,6 +4,7 @@ import { TechSheet } from '../../components/ui/TechSheet';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { countryService, type Country } from '../../services/countryService';
+import { aiService } from '../../services/aiService';
 
 export function CountryDetailsPage() {
     const { countryId } = useParams<{ countryId: string }>();
@@ -16,6 +17,11 @@ export function CountryDetailsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [searchText, setSearchText] = useState('');
     const [selectedEquipment, setSelectedEquipment] = useState<any>(null);
+    const [isSelectingCompare, setIsSelectingCompare] = useState(false);
+    const [comparingItem, setComparingItem] = useState<any>(null);
+    const [intelOpen, setIntelOpen] = useState(false);
+    const [intelData, setIntelData] = useState('');
+    const [loadingIntel, setLoadingIntel] = useState(false);
 
     useEffect(() => {
         if (countryId) {
@@ -55,6 +61,20 @@ export function CountryDetailsPage() {
     });
 
     const categories = Array.from(new Set(equipment.map(e => e.categoryName))).sort();
+
+    const handleGenerateIntel = async () => {
+        if (!selectedEquipment || !country) return;
+        setLoadingIntel(true);
+        setIntelOpen(true);
+        try {
+            const report = await aiService.getTacticalIntel(selectedEquipment.name, selectedEquipment.categoryName, country.name);
+            setIntelData(report);
+        } catch (error) {
+            setIntelData('ERRO AO ESTABELECER LINK COM CENTRO DE INTELIGÊNCIA. TENTE NOVAMENTE.');
+        } finally {
+            setLoadingIntel(false);
+        }
+    };
 
     if (loading) return <div className="text-center p-10 font-mono text-red-600 animate-pulse tracking-widest">CARREGANDO INTELIGÊNCIA...</div>;
     if (!country) return null;
@@ -192,64 +212,226 @@ export function CountryDetailsPage() {
                     ))}
                 </div>
 
-                {/* MODAL (Reused/Adapted Design from TrainingPage) */}
+                {/* MODAL / COMPARISON SYSTEM */}
                 {selectedEquipment && (
-                    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in" onClick={() => setSelectedEquipment(null)}>
+                    <div
+                        className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in"
+                        onClick={() => {
+                            setSelectedEquipment(null);
+                            setComparingItem(null);
+                            setIsSelectingCompare(false);
+                        }}
+                    >
                         <div
-                            className="bg-[#0a0a0a] border-2 border-lime-900 w-full max-w-6xl h-[85vh] overflow-hidden flex flex-col md:flex-row shadow-[0_0_100px_rgba(101,163,13,0.2)] animate-scale-in"
+                            className={`bg-[#0a0a0a] border-2 border-lime-900 w-full transition-all duration-500 ease-in-out h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-[0_0_100px_rgba(101,163,13,0.2)] ${comparingItem || isSelectingCompare ? 'max-w-[95vw]' : 'max-w-6xl'}`}
                             onClick={e => e.stopPropagation()}
                         >
-                            {/* LEFT: IMAGE */}
-                            <div className="w-full md:w-2/3 bg-black relative border-r border-[#222]">
-                                <div className="absolute top-0 left-0 p-4 z-10">
-                                    <h2 className="text-3xl font-black italic text-white uppercase">{selectedEquipment.name}</h2>
-                                    <p className="text-lime-500 font-mono text-xs">{selectedEquipment.categoryName} // {country.name}</p>
+                            {/* --- COLUNA ESQUERDA (ITEM PRINCIPAL) --- */}
+                            <div className={`${comparingItem || isSelectingCompare ? 'w-full md:w-1/2 border-r border-[#333]' : 'w-full md:w-2/3 border-r border-[#222]'} bg-black relative flex flex-col transition-all duration-500`}>
+                                {/* Header Item Principal */}
+                                <div className="absolute top-0 left-0 p-4 z-10 w-full bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                                    <h2 className="text-2xl md:text-3xl font-black italic text-white uppercase drop-shadow-lg">{selectedEquipment.name}</h2>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-lime-500 font-mono text-xs shadow-black drop-shadow-md">{selectedEquipment.categoryName} // {country.name}</p>
+                                        {/* TAG DE FONTE */}
+                                        <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest ${selectedEquipment.descriptionSource === 'AI_GENERATED' || (selectedEquipment.description && selectedEquipment.description.includes('**ANÁLISE PVO:**'))
+                                            ? 'border-purple-500 text-purple-400 bg-purple-900/40'
+                                            : 'border-blue-500 text-blue-400 bg-blue-900/40'
+                                            }`}>
+                                            {selectedEquipment.descriptionSource === 'AI_GENERATED' || (selectedEquipment.description && selectedEquipment.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="w-full h-full flex items-center justify-center p-8">
-                                    <ZoomableImage
-                                        src={selectedEquipment.imageUrl}
-                                        alt={selectedEquipment.name}
-                                        className="w-full h-full object-contain"
-                                    />
+
+                                {/* Imagem e Specs do Item Principal */}
+                                <div className={`flex-1 relative ${comparingItem ? 'flex flex-col' : ''}`}>
+                                    {/* Se comparando, a imagem fica no topo (50% height) e specs embaixo. Se não, layout normal (imagem full) */}
+                                    <div className={`${comparingItem ? 'h-1/2 border-b border-[#222]' : 'h-full'} w-full flex items-center justify-center p-8 bg-black`}>
+                                        <ZoomableImage
+                                            src={selectedEquipment.imageUrl}
+                                            alt={selectedEquipment.name}
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    {comparingItem && (
+                                        <div className="h-1/2 overflow-y-auto p-6 custom-scrollbar bg-[#0f0f0f]">
+                                            <TechSheet markdown={selectedEquipment.description || ''} />
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* Botão de Ação -> Comparar (Só aparece se não estiver comparando ou selecionando) */}
+                                {!comparingItem && !isSelectingCompare && (
+                                    <div className="absolute bottom-4 right-4 z-20">
+                                        <button
+                                            onClick={() => setIsSelectingCompare(true)}
+                                            className="btn-gaming bg-blue-900/20 border-blue-500 text-blue-400 hover:bg-blue-600 hover:text-white flex items-center gap-2"
+                                        >
+                                            <span className="text-lg">⇄</span> COMPARAR
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
-                            {/* RIGHT: DATA */}
-                            <div className="w-full md:w-1/3 bg-[#0f0f0f] lex flex-col flex">
-                                <div className="p-6 border-b border-[#222] bg-[#111] flex justify-between items-start">
-                                    <div>
-                                        <span className="text-xs font-mono text-gray-500 uppercase tracking-widest block mb-2">FICHA TÉCNICA</span>
-                                        <div className="grid grid-cols-2 gap-4 text-[10px] font-mono text-gray-400">
-                                            <div>
-                                                <span className="text-red-500 block">FABRICANTE</span>
-                                                {selectedEquipment.manufacturer || 'Desconhecido'}
+                            {/* --- COLUNA DIREITA (INTERATIVA) --- */}
+                            <div className={`${comparingItem || isSelectingCompare ? 'w-full md:w-1/2' : 'w-full md:w-1/3'} bg-[#0f0f0f] flex flex-col transition-all duration-500`}>
+
+                                {/* CASE 1: MODO COMPARAÇÃO ATIVO (MOSTRANDO ITEM B) */}
+                                {comparingItem ? (
+                                    <div className="flex flex-col h-full relative">
+                                        <div className="absolute top-0 right-0 p-4 z-20">
+                                            <button
+                                                onClick={() => setComparingItem(null)}
+                                                className="bg-red-900/50 hover:bg-red-600 text-white px-3 py-1 text-xs border border-red-500 uppercase font-bold"
+                                            >
+                                                Encerrar Comparação ✕
+                                            </button>
+                                        </div>
+
+                                        {/* Header Item B */}
+                                        <div className="absolute top-0 left-0 p-4 z-10 w-full bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                                            <h2 className="text-2xl md:text-3xl font-black italic text-white uppercase drop-shadow-lg text-right pr-12">{comparingItem.name}</h2>
+                                            <div className="flex items-center gap-2 justify-end pr-12">
+                                                <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest bg-black/50 ${comparingItem.descriptionSource === 'AI_GENERATED' || (comparingItem.description && comparingItem.description.includes('**ANÁLISE PVO:**'))
+                                                    ? 'border-purple-500 text-purple-400'
+                                                    : 'border-blue-500 text-blue-400'
+                                                    }`}>
+                                                    {comparingItem.descriptionSource === 'AI_GENERATED' || (comparingItem.description && comparingItem.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}
+                                                </span>
+                                                <p className="text-yellow-500 font-mono text-xs shadow-black drop-shadow-md">{comparingItem.categoryName} // {country.name}</p>
                                             </div>
-                                            <div>
-                                                <span className="text-red-500 block">ANO</span>
-                                                {selectedEquipment.year || 'N/A'}
-                                            </div>
-                                            <div className="col-span-2">
-                                                <span className="text-red-500 block">ORIGEM</span>
-                                                {selectedEquipment.origin || 'Desconhecida'}
+                                        </div>
+
+                                        <div className="h-1/2 w-full flex items-center justify-center p-8 bg-[#080808] border-b border-[#222]">
+                                            <ZoomableImage
+                                                src={comparingItem.imageUrl}
+                                                alt={comparingItem.name}
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <div className="h-1/2 overflow-y-auto p-6 custom-scrollbar bg-[#111]">
+                                            <TechSheet markdown={comparingItem.description || ''} />
+                                        </div>
+                                    </div>
+
+                                    /* CASE 2: MODO SELEÇÃO (ESCOLHER ITEM B) */
+                                ) : isSelectingCompare ? (
+                                    <div className="flex flex-col h-full">
+                                        <div className="p-4 border-b border-[#333] flex justify-between items-center bg-[#111]">
+                                            <h3 className="text-white font-bold uppercase italic text-lg">Selecione para Comparar</h3>
+                                            <button
+                                                onClick={() => setIsSelectingCompare(false)}
+                                                className="text-gray-500 hover:text-white"
+                                            >
+                                                CANCELAR
+                                            </button>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {equipment
+                                                    .filter(e => e.categoryName === selectedEquipment.categoryName && e.id !== selectedEquipment.id)
+                                                    .map(target => (
+                                                        <button
+                                                            key={target.id}
+                                                            onClick={() => {
+                                                                setComparingItem(target);
+                                                                setIsSelectingCompare(false);
+                                                            }}
+                                                            className="flex items-center gap-3 p-2 border border-[#333] bg-[#050505] hover:border-blue-500 hover:bg-[#111] transition-all text-left group"
+                                                        >
+                                                            <div className="w-16 h-12 bg-black border border-[#222]">
+                                                                <img src={target.imageUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-white font-bold text-xs uppercase">{target.name}</div>
+                                                                <div className="text-gray-500 text-[10px] font-mono">{target.code}</div>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                {equipment.filter(e => e.categoryName === selectedEquipment.categoryName && e.id !== selectedEquipment.id).length === 0 && (
+                                                    <div className="col-span-2 text-center p-10 text-gray-600 font-mono text-xs">
+                                                        Nenhum outro equipamento similar encontrado nesta categoria.
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => setSelectedEquipment(null)}
-                                        className="w-8 h-8 flex items-center justify-center border border-red-900/50 hover:bg-red-900 text-gray-500 hover:text-white transition-colors"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                                    <TechSheet markdown={selectedEquipment.description || ''} />
-                                </div>
-                                <div className="p-4 border-t border-[#222] bg-[#050505]">
-                                    <div className="text-[10px] font-mono text-gray-600 uppercase text-center">
-                                        PVO DATABASE // {new Date().getFullYear()}
+
+                                    /* CASE 3: VISUALIZAÇÃO PADRÃO (DETAILS) */
+                                ) : (
+                                    <>
+                                        <div className="p-6 border-b border-[#222] bg-[#111] flex justify-between items-start">
+                                            <div>
+                                                <span className="text-xs font-mono text-gray-500 uppercase tracking-widest block mb-2">FICHA TÉCNICA</span>
+                                                <div className="grid grid-cols-2 gap-4 text-[10px] font-mono text-gray-400">
+                                                    <div>
+                                                        <span className="text-red-500 block">FABRICANTE</span>
+                                                        {selectedEquipment.manufacturer || 'Desconhecido'}
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-red-500 block">ANO</span>
+                                                        {selectedEquipment.year || 'N/A'}
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        <span className="text-red-500 block">ORIGEM</span>
+                                                        {selectedEquipment.origin || 'Desconhecida'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setSelectedEquipment(null)}
+                                                className="w-8 h-8 flex items-center justify-center border border-red-900/50 hover:bg-red-900 text-gray-500 hover:text-white transition-colors"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                                            <TechSheet markdown={selectedEquipment.description || ''} />
+                                        </div>
+                                        <div className="p-4 border-t border-[#222] bg-[#050505] flex justify-between items-center relative">
+                                            <div className="text-[10px] font-mono text-gray-600 uppercase text-center flex-1">
+                                                PVO DATABASE // {new Date().getFullYear()}
+                                            </div>
+                                            <button
+                                                onClick={handleGenerateIntel}
+                                                disabled={loadingIntel}
+                                                className="absolute bottom-2 right-2 text-[10px] bg-red-900/10 text-red-500 hover:text-white border border-red-900 hover:bg-red-900 px-3 py-1 font-bold uppercase transition-all disabled:opacity-50"
+                                            >
+                                                {loadingIntel ? 'TRANSMITINDO...' : '📡 SOLICITAR INTEL REPORT'}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* --- ABA DE INTELIGÊNCIA (OVERLAY) --- */}
+                            {intelOpen && !comparingItem && !isSelectingCompare && (
+                                <div className="absolute top-0 right-0 w-full md:w-1/3 bg-[#0a0a0a]/95 h-full border-l border-red-900/50 flex flex-col animate-fade-in z-50 backdrop-blur-xl">
+                                    <div className="p-4 border-b border-red-900/30 flex justify-between items-center bg-red-900/5">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${loadingIntel ? 'bg-yellow-500 animate-ping' : 'bg-green-500'}`}></div>
+                                            <h3 className="text-red-500 font-black italic uppercase">RELATÓRIO DE CAMPO AI</h3>
+                                        </div>
+                                        <button onClick={() => setIntelOpen(false)} className="text-gray-500 hover:text-white font-mono">⚡ FECHAR</button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar font-mono text-xs leading-relaxed text-gray-300">
+                                        {loadingIntel ? (
+                                            <div className="space-y-4 opacity-50">
+                                                <div className="h-2 bg-gray-800 rounded w-3/4 animate-pulse"></div>
+                                                <div className="h-2 bg-gray-800 rounded w-1/2 animate-pulse"></div>
+                                                <div className="h-2 bg-gray-800 rounded w-full animate-pulse"></div>
+                                                <p className="text-center text-red-500 mt-10 animate-pulse">ESTABELECENDO LINK SEGURO COM QG DE INTELIGÊNCIA...</p>
+                                            </div>
+                                        ) : (
+                                            <TechSheet markdown={intelData} className="intel-report" />
+                                        )}
+                                    </div>
+                                    <div className="p-2 border-t border-red-900/30 bg-black text-[9px] text-gray-600 font-mono text-center">
+                                        DADOS GERADOS VIA SATÉLITE EM TEMPO REAL. CONFIRMAÇÃO VISUAL RECOMENDADA.
                                     </div>
                                 </div>
-                            </div>
+                            )}
+
                         </div>
                     </div>
                 )}

@@ -30,6 +30,7 @@ export const equipmentService = {
         categoryId: item.category_id,
         imagePath: item.image_path,
         thumbnailPath: item.thumbnail_path,
+        descriptionSource: item.description_source,
         createdAt: item.created_at,
         updatedAt: item.updated_at
       }));
@@ -59,6 +60,7 @@ export const equipmentService = {
         categoryId: data.category_id,
         imagePath: data.image_path,
         thumbnailPath: data.thumbnail_path,
+        descriptionSource: data.description_source,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
@@ -130,6 +132,7 @@ export const equipmentService = {
         categoryId: data.category_id,
         imagePath: data.image_path,
         thumbnailPath: data.thumbnail_path,
+        descriptionSource: data.description_source,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
@@ -172,6 +175,7 @@ export const equipmentService = {
         categoryId: updated.category_id,
         imagePath: updated.image_path,
         thumbnailPath: updated.thumbnail_path,
+        descriptionSource: updated.description_source,
         createdAt: updated.created_at,
         updatedAt: updated.updated_at,
       };
