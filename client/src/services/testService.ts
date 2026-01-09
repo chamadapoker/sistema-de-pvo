@@ -53,7 +53,7 @@ export interface TestQuestion {
     id: string;
     test_id: string;
     equipment_id: string;
-    question_order: number;
+    question_number: number;
     points: number;
 }
 
@@ -238,7 +238,7 @@ export const testService = {
                 const questionsToInsert = testData.questions.map((qId: string, index: number) => ({
                     test_id: test.id,
                     equipment_id: qId,
-                    question_order: index
+                    question_number: index + 1
                 }));
 
                 const { error: qError } = await supabase
@@ -265,7 +265,7 @@ export const testService = {
                     const questionsToInsert = selected.map((item: any, index: number) => ({
                         test_id: test.id,
                         equipment_id: item.id,
-                        question_order: index
+                        question_number: index + 1
                     }));
 
                     const { error: qError } = await supabase
@@ -355,7 +355,7 @@ export const testService = {
     },
 
     async getTestQuestions(testId: string): Promise<TestQuestion[]> {
-        const { data } = await supabase.from('test_questions').select('*').eq('test_id', testId).order('question_order');
+        const { data } = await supabase.from('test_questions').select('*').eq('test_id', testId).order('question_number');
         return data || [];
     },
 
