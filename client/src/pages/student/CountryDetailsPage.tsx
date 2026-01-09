@@ -17,6 +17,8 @@ export function CountryDetailsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [searchText, setSearchText] = useState('');
     const [selectedEquipment, setSelectedEquipment] = useState<any>(null);
+    const [selectedModelGroup, setSelectedModelGroup] = useState<any[] | null>(null);
+    const [galleryIndex, setGalleryIndex] = useState(0);
 
     // AI & Comparison State
     const [isSelectingCompare, setIsSelectingCompare] = useState(false);
@@ -65,6 +67,20 @@ export function CountryDetailsPage() {
     });
 
     const categories = Array.from(new Set(equipment.map(e => e.categoryName))).sort();
+
+    // GROUPS LOGIC: Group equipments by name
+    const models = (filteredEquipment || []).reduce((acc, item) => {
+        const nameKey = item.name.trim().toUpperCase(); // Normalize
+        if (!acc[nameKey]) {
+            acc[nameKey] = [];
+        }
+        acc[nameKey].push(item);
+        return acc;
+    }, {} as Record<string, any[]>);
+
+    const modelKeys = Object.keys(models).sort();
+
+    const currentViewItem = selectedModelGroup ? selectedModelGroup[galleryIndex] : null;
 
     const handleAskIntel = () => {
         setIsAskingIntel(true);
@@ -199,39 +215,54 @@ export function CountryDetailsPage() {
 
                 {/* Equipment Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                    {filteredEquipment.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setSelectedEquipment(item)}
-                            className="group relative aspect-[3/4] bg-black border border-[#333] hover:border-lime-500 transition-all overflow-hidden gaming-card text-left"
-                        >
-                            <img
-                                src={item.imageUrl} // Use thumbnail if available in real app
-                                className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
-                                alt={item.name}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90 group-hover:opacity-40 transition-opacity"></div>
+                    {modelKeys.map((modelName) => {
+                        const groupItems = models[modelName];
+                        const coverItem = groupItems[0];
 
-                            <div className="absolute top-2 right-2">
-                                <span className="px-2 py-0.5 bg-black/80 border border-lime-600 text-lime-400 text-[9px] font-mono font-bold rounded">
-                                    {item.categoryName}
-                                </span>
-                            </div>
+                        return (
+                            <button
+                                key={modelName}
+                                onClick={() => {
+                                    setSelectedModelGroup(groupItems);
+                                    setGalleryIndex(0);
+                                    setSelectedEquipment(coverItem); // Keep strictly for legacy compatibility if needed, but mainly use group
+                                }}
+                                className="group relative aspect-[3/4] bg-black border border-[#333] hover:border-lime-500 transition-all overflow-hidden gaming-card text-left"
+                            >
+                                <img
+                                    src={coverItem.imageUrl} // Use thumbnail if available in real app
+                                    className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
+                                    alt={modelName}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90 group-hover:opacity-40 transition-opacity"></div>
 
-                            <div className="absolute bottom-0 left-0 w-full p-4">
-                                <h4 className="font-black text-white text-sm italic uppercase leading-tight group-hover:text-lime-400 transition-colors">
-                                    {item.name}
-                                </h4>
-                            </div>
-                        </button>
-                    ))}
+                                <div className="absolute top-2 right-2 flex gap-1">
+                                    <span className="px-2 py-0.5 bg-black/80 border border-lime-600 text-lime-400 text-[9px] font-mono font-bold rounded">
+                                        {coverItem.categoryName}
+                                    </span>
+                                    {groupItems.length > 1 && (
+                                        <span className="px-2 py-0.5 bg-[#1a1a1a] border border-[#333] text-white text-[9px] font-mono font-bold rounded">
+                                            {groupItems.length} VARS
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="absolute bottom-0 left-0 w-full p-4">
+                                    <h4 className="font-black text-white text-sm italic uppercase leading-tight group-hover:text-lime-400 transition-colors">
+                                        {modelName}
+                                    </h4>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* MODAL / COMPARISON SYSTEM */}
-                {selectedEquipment && (
+                {selectedModelGroup && currentViewItem && (
                     <div
                         className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in"
                         onClick={() => {
+                            setSelectedModelGroup(null);
                             setSelectedEquipment(null);
                             setComparingItem(null);
                             setIsSelectingCompare(false);
@@ -242,20 +273,35 @@ export function CountryDetailsPage() {
                             className={`bg-[#0a0a0a] border-2 border-lime-900 w-full transition-all duration-500 ease-in-out h-[90vh] overflow-hidden flex flex-col md:flex-row shadow-[0_0_100px_rgba(101,163,13,0.2)] ${comparingItem || isSelectingCompare ? 'max-w-[95vw]' : 'max-w-6xl'}`}
                             onClick={e => e.stopPropagation()}
                         >
-                            {/* --- COLUNA ESQUERDA (ITEM PRINCIPAL) --- */}
+                            {/* --- COLUNA ESQUERDA (ITEM PRINCIPAL / GALERIA) --- */}
                             <div className={`${comparingItem || isSelectingCompare ? 'w-full md:w-1/2 border-r border-[#333]' : 'w-full md:w-2/3 border-r border-[#222]'} bg-black relative flex flex-col transition-all duration-500`}>
+
+                                {/* Galeria Navigation in Left Column (Only if not comparing) */}
+                                {!comparingItem && selectedModelGroup.length > 1 && (
+                                    <>
+                                        <button onClick={(e) => { e.stopPropagation(); setGalleryIndex(prev => (prev - 1 + selectedModelGroup.length) % selectedModelGroup.length); }} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/80 hover:bg-lime-900 border border-gray-700 hover:border-lime-500 rounded-full transition-all z-40 text-white">←</button>
+                                        <button onClick={(e) => { e.stopPropagation(); setGalleryIndex(prev => (prev + 1) % selectedModelGroup.length); }} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-black/80 hover:bg-lime-900 border border-gray-700 hover:border-lime-500 rounded-full transition-all z-40 text-white">→</button>
+                                    </>
+                                )}
+
                                 {/* Header Item Principal */}
                                 <div className="absolute top-0 left-0 p-4 z-10 w-full bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-                                    <h2 className="text-2xl md:text-3xl font-black italic text-white uppercase drop-shadow-lg">{selectedEquipment.name}</h2>
+                                    <h2 className="text-2xl md:text-3xl font-black italic text-white uppercase drop-shadow-lg">{currentViewItem.name}</h2>
                                     <div className="flex items-center gap-2">
-                                        <p className="text-lime-500 font-mono text-xs shadow-black drop-shadow-md">{selectedEquipment.categoryName} // {country.name}</p>
+                                        <p className="text-lime-500 font-mono text-xs shadow-black drop-shadow-md">{currentViewItem.categoryName} // {country.name}</p>
                                         {/* TAG DE FONTE */}
-                                        <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest ${selectedEquipment.descriptionSource === 'AI_GENERATED' || (selectedEquipment.description && selectedEquipment.description.includes('**ANÁLISE PVO:**'))
+                                        <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest ${currentViewItem.descriptionSource === 'AI_GENERATED' || (currentViewItem.description && currentViewItem.description.includes('**ANÁLISE PVO:**'))
                                             ? 'border-purple-500 text-purple-400 bg-purple-900/40'
                                             : 'border-blue-500 text-blue-400 bg-blue-900/40'
                                             }`}>
-                                            {selectedEquipment.descriptionSource === 'AI_GENERATED' || (selectedEquipment.description && selectedEquipment.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}
+                                            {currentViewItem.descriptionSource === 'AI_GENERATED' || (currentViewItem.description && currentViewItem.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}
                                         </span>
+                                        {/* Counter indicator */}
+                                        {!comparingItem && selectedModelGroup.length > 1 && (
+                                            <span className="text-[9px] px-1.5 py-0.5 border border-gray-700 bg-black text-gray-300 font-mono rounded">
+                                                IMG {galleryIndex + 1}/{selectedModelGroup.length}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 
@@ -264,21 +310,37 @@ export function CountryDetailsPage() {
                                     {/* Se comparando, a imagem fica no topo (50% height) e specs embaixo. Se não, layout normal (imagem full) */}
                                     <div className={`${comparingItem ? 'h-1/2 border-b border-[#222]' : 'h-full'} w-full flex items-center justify-center p-8 bg-black`}>
                                         <ZoomableImage
-                                            src={selectedEquipment.imageUrl}
-                                            alt={selectedEquipment.name}
+                                            src={currentViewItem.imageUrl}
+                                            alt={currentViewItem.name}
                                             className="w-full h-full object-contain"
                                         />
                                     </div>
+
+                                    {/* Thumbnails Strip (Only if NOT comparing and has multiple) */}
+                                    {!comparingItem && selectedModelGroup.length > 1 && (
+                                        <div className="absolute bottom-0 left-0 w-full h-20 bg-black/80 backdrop-blur-sm border-t border-[#222] p-2 flex gap-2 overflow-x-auto custom-scrollbar z-30 justify-center">
+                                            {selectedModelGroup.map((item, idx) => (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => setGalleryIndex(idx)}
+                                                    className={`relative aspect-video h-full flex-shrink-0 border-2 transition-all ${idx === galleryIndex ? 'border-lime-600 opacity-100' : 'border-transparent opacity-50 hover:opacity-80'}`}
+                                                >
+                                                    <img src={item.imageUrl} className="w-full h-full object-cover" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     {comparingItem && (
                                         <div className="h-1/2 overflow-y-auto p-6 custom-scrollbar bg-[#0f0f0f]">
-                                            <TechSheet markdown={selectedEquipment.description || ''} />
+                                            <TechSheet markdown={currentViewItem.description || ''} />
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Botão de Ação -> Comparar (Só aparece se não estiver comparando ou selecionando) */}
                                 {!comparingItem && !isSelectingCompare && (
-                                    <div className="absolute bottom-4 right-4 z-20">
+                                    <div className="absolute bottom-24 right-4 z-20">
                                         <button
                                             onClick={() => setIsSelectingCompare(true)}
                                             className="btn-gaming bg-blue-900/20 border-blue-500 text-blue-400 hover:bg-blue-600 hover:text-white flex items-center gap-2"
@@ -345,7 +407,7 @@ export function CountryDetailsPage() {
                                         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {equipment
-                                                    .filter(e => e.categoryName === selectedEquipment.categoryName && e.id !== selectedEquipment.id)
+                                                    .filter(e => e.categoryName === currentViewItem.categoryName && e.id !== currentViewItem.id) // Compare with others in same category
                                                     .map(target => (
                                                         <button
                                                             key={target.id}
@@ -364,7 +426,7 @@ export function CountryDetailsPage() {
                                                             </div>
                                                         </button>
                                                     ))}
-                                                {equipment.filter(e => e.categoryName === selectedEquipment.categoryName && e.id !== selectedEquipment.id).length === 0 && (
+                                                {equipment.filter(e => e.categoryName === currentViewItem.categoryName && e.id !== currentViewItem.id).length === 0 && (
                                                     <div className="col-span-2 text-center p-10 text-gray-600 font-mono text-xs">
                                                         Nenhum outro equipamento similar encontrado nesta categoria.
                                                     </div>
@@ -415,27 +477,27 @@ export function CountryDetailsPage() {
                                                 <div className="grid grid-cols-2 gap-4 text-[10px] font-mono text-gray-400">
                                                     <div>
                                                         <span className="text-red-500 block">FABRICANTE</span>
-                                                        {selectedEquipment.manufacturer || 'Desconhecido'}
+                                                        {currentViewItem.manufacturer || 'Desconhecido'}
                                                     </div>
                                                     <div>
                                                         <span className="text-red-500 block">ANO</span>
-                                                        {selectedEquipment.year || 'N/A'}
+                                                        {currentViewItem.year || 'N/A'}
                                                     </div>
                                                     <div className="col-span-2">
                                                         <span className="text-red-500 block">ORIGEM</span>
-                                                        {selectedEquipment.origin || 'Desconhecida'}
+                                                        {currentViewItem.origin || 'Desconhecida'}
                                                     </div>
                                                 </div>
                                             </div>
                                             <button
-                                                onClick={() => setSelectedEquipment(null)}
+                                                onClick={() => setSelectedModelGroup(null)}
                                                 className="w-8 h-8 flex items-center justify-center border border-red-900/50 hover:bg-red-900 text-gray-500 hover:text-white transition-colors"
                                             >
                                                 ✕
                                             </button>
                                         </div>
                                         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                                            <TechSheet markdown={selectedEquipment.description || ''} />
+                                            <TechSheet markdown={currentViewItem.description || ''} />
                                         </div>
                                         <div className="p-4 border-t border-[#222] bg-[#050505] flex justify-between items-center relative">
                                             <div className="text-[10px] font-mono text-gray-600 uppercase text-center flex-1">
