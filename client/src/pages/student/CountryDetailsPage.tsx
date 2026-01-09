@@ -295,10 +295,10 @@ export function CountryDetailsPage() {
                                 {/* CASE 1: MODO COMPARAÇÃO ATIVO (MOSTRANDO ITEM B) */}
                                 {comparingItem ? (
                                     <div className="flex flex-col h-full relative">
-                                        <div className="absolute top-0 right-0 p-4 z-20">
+                                        <div className="absolute top-2 right-2 z-50">
                                             <button
                                                 onClick={() => setComparingItem(null)}
-                                                className="bg-red-900/50 hover:bg-red-600 text-white px-3 py-1 text-xs border border-red-500 uppercase font-bold"
+                                                className="bg-black/90 hover:bg-red-600 text-red-500 hover:text-white px-4 py-2 text-[10px] border border-red-900 font-mono font-bold uppercase tracking-widest shadow-lg transition-all"
                                             >
                                                 Encerrar Comparação ✕
                                             </button>
@@ -306,8 +306,8 @@ export function CountryDetailsPage() {
 
                                         {/* Header Item B */}
                                         <div className="absolute top-0 left-0 p-4 z-10 w-full bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
-                                            <h2 className="text-2xl md:text-3xl font-black italic text-white uppercase drop-shadow-lg text-right pr-12">{comparingItem.name}</h2>
-                                            <div className="flex items-center gap-2 justify-end pr-12">
+                                            <h2 className="text-2xl md:text-3xl font-black italic text-white uppercase drop-shadow-lg text-right pr-48">{comparingItem.name}</h2>
+                                            <div className="flex items-center gap-2 justify-end pr-48">
                                                 <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest bg-black/50 ${comparingItem.descriptionSource === 'AI_GENERATED' || (comparingItem.description && comparingItem.description.includes('**ANÁLISE PVO:**'))
                                                     ? 'border-purple-500 text-purple-400'
                                                     : 'border-blue-500 text-blue-400'

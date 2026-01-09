@@ -223,8 +223,13 @@ export function CountriesPage() {
                                 backgroundSize: '4% 8%'
                             }}
                         />
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="text-[20vw] text-white opacity-[0.02] font-black select-none">WORLD</div>
+                        <div className="absolute inset-0 pointer-events-none select-none opacity-30">
+                            <img
+                                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Equirectangular_projection_SW.jpg/2560px-Equirectangular_projection_SW.jpg"
+                                className="w-full h-full object-fill mix-blend-overlay grayscale contrast-150"
+                                alt="World Map Strat Layer"
+                            />
+                            <div className="absolute inset-0 bg-black/50"></div>
                         </div>
 
                         {/* Plots */}
