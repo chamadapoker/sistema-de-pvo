@@ -41,10 +41,12 @@ export function StudentDashboard() {
         <DashboardLayout>
             <div className="space-y-8">
                 {/* Header Section */}
-                <div className="flex items-center justify-between border-b border-red-900/30 pb-4">
-                    <div>
-                        <h2 className="text-3xl lg:text-4xl font-black italic text-white uppercase tracking-tighter drop-shadow-lg">
-                            <span className="text-red-600">DA PÁTRIA OS OLHOS...</span> <span className="text-gray-600">//</span> NA GUERRA E NA PAZ...
+                <div className="flex items-center justify-center border-b border-red-900/30 pb-4">
+                    <div className="text-center w-full">
+                        <h2 className="text-2xl md:text-3xl lg:text-4xl font-black italic text-white uppercase tracking-tighter drop-shadow-lg px-2">
+                            <span className="text-red-600 block md:inline">DA PÁTRIA OS OLHOS...</span>
+                            <span className="text-gray-600 hidden md:inline px-2">//</span>
+                            <span className="block md:inline">NA GUERRA E NA PAZ...</span>
                         </h2>
                     </div>
                 </div>
@@ -79,7 +81,7 @@ export function StudentDashboard() {
                 </div>
 
                 {/* Menu Cards Grid - Mesmo estilo das Baterias */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {menuItems.map((item) => (
                         <Link
                             key={item.id}
