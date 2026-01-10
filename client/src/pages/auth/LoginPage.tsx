@@ -59,6 +59,13 @@ export function LoginPage() {
           <p className="text-[10px] text-gray-700 mt-2">Baseado no sistema PVO original</p>
         </div>
       </div>
-    </div>
+
+      {/* A-1 AMX Fighter Jet Decor */}
+      <img
+        src="/a1.png"
+        alt="AMX A-1"
+        className="absolute bottom-0 right-0 w-[800px] max-w-none opacity-20 pointer-events-none translate-x-[20%] translate-y-[20%] z-0 grayscale contrast-125 md:opacity-40"
+      />
+    </div >
   );
 }
