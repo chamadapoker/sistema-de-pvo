@@ -14,6 +14,7 @@ export interface Country {
     population?: number;
     areaKm2?: number; // mapped from area_km2
     languages?: string[];
+    borders?: string[];
     currencyCode?: string; // mapped from currency_code
     currencyName?: string; // mapped from currency_name
     militaryBudgetUsd?: number; // mapped from military_budget_usd

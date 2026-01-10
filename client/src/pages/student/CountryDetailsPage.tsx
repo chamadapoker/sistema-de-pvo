@@ -180,6 +180,13 @@ export function CountryDetailsPage() {
                             {Array.isArray(country.languages) ? country.languages.join(', ') : country.languages || '-'}
                         </div>
                     </div>
+
+                    <div className="bg-[#111] border border-[#222] p-4 relative overflow-hidden group hover:border-red-600 transition-colors">
+                        <div className="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-1">Fronteiras</div>
+                        <div className="text-xs md:text-sm font-bold text-white leading-tight mt-1">
+                            {Array.isArray(country.borders) ? country.borders.join(', ') : country.borders || 'N/A'}
+                        </div>
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -487,7 +494,19 @@ export function CountryDetailsPage() {
                                                         <span className="text-red-500 block">ORIGEM</span>
                                                         {currentViewItem.origin || 'Desconhecida'}
                                                     </div>
-                                                </div>
+                                                    <div className="bg-[#111] p-3 rounded border border-[#333]">
+                                                        <div className="text-[10px] text-gray-500 font-mono uppercase mb-1">Idiomas</div>
+                                                        <div className="text-white text-sm font-bold truncate">
+                                                            {country.languages?.join(', ') || '-'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-[#111] p-3 rounded border border-[#333] col-span-2 md:col-span-1">
+                                                        <div className="text-[10px] text-gray-500 font-mono uppercase mb-1">Fronteiras</div>
+                                                        <div className="text-white text-sm font-bold truncate">
+                                                            {country.borders?.join(', ') || 'Nenhuma (Ilha/Isolado)'}
+                                                        </div>
+                                                    </div>                </div>
                                             </div>
                                             <button
                                                 onClick={() => setSelectedModelGroup(null)}

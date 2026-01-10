@@ -1,6 +1,7 @@
 -- ATUALIZAÇÃO MANUAL DE DADOS PRINCIPAIS
--- Garante coluna de idiomas
+-- Garante coluna de idiomas e fronteiras
 ALTER TABLE countries ADD COLUMN IF NOT EXISTS languages text[];
+ALTER TABLE countries ADD COLUMN IF NOT EXISTS borders text[];
 
 
 UPDATE countries SET
@@ -11,7 +12,8 @@ UPDATE countries SET
     military_rank = 1,
     military_description = 'Superpotência global com capacidade de projeção de poder em múltiplos teatros simultâneos. Doutrina focada em superioridade aérea e dominância naval.',
     alliance = 'OTAN',
-    languages = '{English}'
+    languages = '{English}',
+    borders = '{"Canada","Mexico"}'
 WHERE name ILIKE '%United States%';
 
 UPDATE countries SET
@@ -22,7 +24,8 @@ UPDATE countries SET
     military_rank = 2,
     military_description = 'Focada em guerra terrestre massiva, artilharia superior e arsenal nuclear estratégico. Doutrina de defesa em profundidade e A2/AD.',
     alliance = 'CSTO',
-    languages = '{Russian}'
+    languages = '{Russian}',
+    borders = '{"Norway","Finland","Estonia","Latvia","Lithuania","Poland","Belarus","Ukraine","Georgia","Azerbaijan","Kazakhstan","China","Mongolia","North Korea"}'
 WHERE name ILIKE '%Russia%';
 
 UPDATE countries SET
@@ -33,7 +36,8 @@ UPDATE countries SET
     military_rank = 3,
     military_description = 'Maior exército permanente do mundo. Modernização rápida focada em negar acesso (A2/AD) no Pacífico e expandir capacidades navais blue-water.',
     alliance = 'BRICS+',
-    languages = '{Mandarin}'
+    languages = '{Mandarin}',
+    borders = '{"Afghanistan","Bhutan","India","Kazakhstan","Kyrgyzstan","Laos","Mongolia","Myanmar","Nepal","North Korea","Pakistan","Russia","Tajikistan","Vietnam"}'
 WHERE name ILIKE '%China%';
 
 UPDATE countries SET
@@ -44,7 +48,8 @@ UPDATE countries SET
     military_rank = 4,
     military_description = 'Força terrestre massiva focada em conter Paquistão e China. Investimento crescente em marinha e força aérea para projeção regional no Índico.',
     alliance = 'BRICS+',
-    languages = '{Hindi,English}'
+    languages = '{Hindi,English}',
+    borders = '{"Bangladesh","Bhutan","China","Myanmar","Nepal","Pakistan"}'
 WHERE name ILIKE '%India%';
 
 UPDATE countries SET
@@ -55,7 +60,8 @@ UPDATE countries SET
     military_rank = 12,
     military_description = 'Maior força da América Latina. Doutrina defensiva focada na proteção da Amazônia (Selva) e do Atlântico Sul (Amazônia Azul).',
     alliance = 'BRICS+',
-    languages = '{Portuguese}'
+    languages = '{Portuguese}',
+    borders = '{"Argentina","Bolivia","Colombia","French Guiana","Guyana","Paraguay","Peru","Suriname","Uruguay","Venezuela"}'
 WHERE name ILIKE '%Brazil%';
 
 UPDATE countries SET
@@ -66,7 +72,8 @@ UPDATE countries SET
     military_rank = 6,
     military_description = 'Força profissional e tecnológica. Capacidade de projeção global limitada mas letal via porta-aviões e forças especiais de elite (SAS).',
     alliance = 'OTAN',
-    languages = '{English}'
+    languages = '{English}',
+    borders = '{"Ireland"}'
 WHERE name ILIKE '%United Kingdom%';
 
 UPDATE countries SET
@@ -77,7 +84,8 @@ UPDATE countries SET
     military_rank = 9,
     military_description = 'Independência estratégica. Possui tríade nuclear própria e indústria de defesa robusta (Rafale, Leclerc). Focada em intervenções rápidas.',
     alliance = 'OTAN',
-    languages = '{French}'
+    languages = '{French}',
+    borders = '{"Andorra","Belgium","Germany","Italy","Luxembourg","Monaco","Spain","Switzerland","Brazil","Suriname"}'
 WHERE name ILIKE '%France%';
 
 UPDATE countries SET
@@ -88,7 +96,8 @@ UPDATE countries SET
     military_rank = 19,
     military_description = 'Em processo de rearmamento (Zeitenwende). Focada em defesa coletiva da Europa Central e blindados de alta tecnologia (Leopard 2).',
     alliance = 'OTAN',
-    languages = '{German}'
+    languages = '{German}',
+    borders = '{"Austria","Belgium","Czech Republic","Denmark","France","Luxembourg","Netherlands","Poland","Switzerland"}'
 WHERE name ILIKE '%Germany%';
 
 UPDATE countries SET
@@ -99,7 +108,8 @@ UPDATE countries SET
     military_rank = 5,
     military_description = 'Força altamente pronta e tecnológica, preparada para guerra total contra o Norte. Artilharia massiva e conscrição universal.',
     alliance = 'Non-Aligned',
-    languages = '{Korean}'
+    languages = '{Korean}',
+    borders = '{"North Korea"}'
 WHERE name ILIKE '%South Korea%';
 
 UPDATE countries SET
@@ -110,7 +120,8 @@ UPDATE countries SET
     military_rank = 36,
     military_description = 'Doutrina Juche. Enorme quantidade de artilharia convencional apontada para Seul e foco assimétrico em mísseis balísticos e nucleares.',
     alliance = 'Non-Aligned',
-    languages = '{Korean}'
+    languages = '{Korean}',
+    borders = '{"China","Russia","South Korea"}'
 WHERE name ILIKE '%North Korea%';
 
 UPDATE countries SET
@@ -121,7 +132,8 @@ UPDATE countries SET
     military_rank = 18,
     military_description = 'Exército endurecido por combate em larga escala. Especialista em guerra de drones, artilharia de precisão e defesa móvel.',
     alliance = 'Non-Aligned',
-    languages = '{Ukrainian}'
+    languages = '{Ukrainian}',
+    borders = '{"Belarus","Hungary","Moldova","Poland","Romania","Russia","Slovakia"}'
 WHERE name ILIKE '%Ukraine%';
 
 UPDATE countries SET
@@ -132,7 +144,8 @@ UPDATE countries SET
     military_rank = 17,
     military_description = 'Defesa ativa e preempção. Depende de superioridade tecnológica (Iron Dome, F-35I) e inteligência para neutralizar ameaças vizinhas.',
     alliance = 'Non-Aligned',
-    languages = '{Hebrew}'
+    languages = '{Hebrew}',
+    borders = '{"Egypt","Jordan","Lebanon","Syria"}'
 WHERE name ILIKE '%Israel%';
 
 UPDATE countries SET
@@ -143,7 +156,8 @@ UPDATE countries SET
     military_rank = 14,
     military_description = 'Guerra assimétrica e por procuração (proxies). Foco em mísseis balísticos, drones kamikaze e enxames de lanchas rápidas no Golfo.',
     alliance = 'BRICS+',
-    languages = '{Persian}'
+    languages = '{Persian}',
+    borders = '{"Afghanistan","Armenia","Azerbaijan","Iraq","Pakistan","Turkey","Turkmenistan"}'
 WHERE name ILIKE '%Iran%';
 
 UPDATE countries SET
@@ -154,7 +168,8 @@ UPDATE countries SET
     military_rank = 8,
     military_description = 'Segunda maior força da NATO. Potência regional com indústria de drones (Bayraktar) líder mundial e marinha em expansão.',
     alliance = 'OTAN',
-    languages = '{Turkish}'
+    languages = '{Turkish}',
+    borders = '{"Armenia","Azerbaijan","Bulgaria","Georgia","Greece","Iran","Iraq","Syria"}'
 WHERE name ILIKE '%Turkey%';
 
 UPDATE countries SET
@@ -165,7 +180,8 @@ UPDATE countries SET
     military_rank = 10,
     military_description = 'Força naval expedicionária focada no Mediterrâneo (Mare Nostrum). Possui porta-aviões leves e forças especiais de alta qualidade.',
     alliance = 'OTAN',
-    languages = '{Italian}'
+    languages = '{Italian}',
+    borders = '{"Austria","France","Slovenia","Switzerland","San Marino","Vatican City"}'
 WHERE name ILIKE '%Italy%';
 
 UPDATE countries SET
@@ -176,7 +192,8 @@ UPDATE countries SET
     military_rank = 7,
     military_description = 'Força de Autodefesa. Foco em guerra antisubmarina e defesa antimíssil avançada (Aegis) para conter China e Coreia do Norte.',
     alliance = 'Non-Aligned',
-    languages = '{Japanese}'
+    languages = '{Japanese}',
+    borders = '{}'
 WHERE name ILIKE '%Japan%';
 
 UPDATE countries SET
@@ -187,7 +204,8 @@ UPDATE countries SET
     military_rank = 21,
     military_description = 'O novo escudo da Europa. Investimento massivo em blindados (K2, Abrams) e artilharia (HIMARS) para deter agressão russa.',
     alliance = 'OTAN',
-    languages = '{Polish}'
+    languages = '{Polish}',
+    borders = '{"Belarus","Czech Republic","Germany","Lithuania","Russia","Slovakia","Ukraine"}'
 WHERE name ILIKE '%Poland%';
 
 UPDATE countries SET
@@ -198,7 +216,8 @@ UPDATE countries SET
     military_rank = 30,
     military_description = 'Em recuperação de décadas de desinvestimento. Focada em defesa territorial e controle do Atlântico Sul, com modernização recente (F-16).',
     alliance = 'Rio Treaty',
-    languages = '{Spanish}'
+    languages = '{Spanish}',
+    borders = '{"Bolivia","Brazil","Chile","Paraguay","Uruguay"}'
 WHERE name ILIKE '%Argentina%';
 
 UPDATE countries SET
@@ -209,7 +228,8 @@ UPDATE countries SET
     military_rank = 50,
     military_description = 'Doutrina de ''Guerra Popular Prolongada''. Equipamento russo/chinês (Su-30, S-300) misturado com milícias irregulares.',
     alliance = 'Non-Aligned',
-    languages = '{Spanish}'
+    languages = '{Spanish}',
+    borders = '{"Brazil","Colombia","Guyana"}'
 WHERE name ILIKE '%Venezuela%';
 
 UPDATE countries SET
@@ -220,5 +240,6 @@ UPDATE countries SET
     military_rank = 40,
     military_description = 'Força mais profissional e bem equipada da América do Sul per capita. Tecnologia ocidental moderna (Leopard 2, F-16).',
     alliance = 'Rio Treaty',
-    languages = '{Spanish}'
+    languages = '{Spanish}',
+    borders = '{"Argentina","Bolivia","Peru"}'
 WHERE name ILIKE '%Chile%';
