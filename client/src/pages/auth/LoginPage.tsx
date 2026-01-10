@@ -62,9 +62,10 @@ export function LoginPage() {
 
       {/* A-1 AMX Fighter Jet Decor */}
       <img
-        src="/a1_transparent.png"
+        src="/a1_4k.jpg"
         alt="AMX A-1"
-        className="absolute bottom-0 left-1/2 w-[1200px] max-w-none -translate-x-1/2 translate-y-[10%] opacity-80 pointer-events-none z-0 lg:opacity-100"
+        className="absolute bottom-0 left-1/2 w-[1600px] max-w-none -translate-x-1/2 opacity-60 pointer-events-none z-0 lg:opacity-80"
+        style={{ maskImage: 'linear-gradient(to top, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to top, black 50%, transparent 100%)' }}
       />
     </div >
   );
