@@ -117,52 +117,5 @@ export const aiService = {
         }
     },
 
-    async compareCountries(countryA: string, countryB: string): Promise<string> {
-        try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-            const prompt = `
-                ATUE COMO UM ESTRATEGISTA MILITAR GLOBAL (WAR ROOM ANALYST).
-                RESPONDA SEMPRE EM PORTUGUÊS (PT-BR).
-
-                CENÁRIO: Tensões escalaram para um conflito hipotético direto entre:
-                
-                Nação A: ${countryA}
-                Nação B: ${countryB}
-
-                Forneça uma análise de "WAR GAME" de alto nível.
-                
-                Estrutura da Resposta (Markdown):
-
-                ## ⚡ CENÁRIO ESTRATÉGICO
-                Uma breve introdução sobre onde e como esse conflito provavelmente ocorreria (fronteira, marítimo, proxy?).
-
-                ## ⚔️ COMPARAÇÃO DE FORÇAS (HEAD-TO-HEAD)
-                Compare brevemente:
-                *   **Força Terrestre/Blindados**: Quem domina o solo?
-                *   **Poder Aéreo**: Quem domina os céus?
-                *   **Poder Naval**: Quem controla o mar?
-                *   **Logística/Economia**: Quem aguenta uma guerra longa?
-
-                ## 🎯 VANTAGENS ASSIMÉTRICAS
-                *   **Vantagem de ${countryA}:** (ex: tecnologia, número, geografia)
-                *   **Vantagem de ${countryB}:** (ex: doutrina, aliados, recursos)
-
-                ## ☢️ FATOR NUCLEAR/ALIADOS (Se aplicável)
-                O conflito ficaria isolado? Quem interviria? Há risco nuclear?
-
-                ## 🏆 PREVISÃO DO RESULTADO
-                Quem venceria em:
-                1.  **Conflito Curto (Blitzkrieg):**
-                2.  **Guerra Total Prolongada:**
-            `;
-
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            return response.text();
-        } catch (error) {
-            console.error("Erro ao simular guerra:", error);
-            throw new Error("War Room Offline. Falha na simulação estratégica.");
-        }
-    }
 };
