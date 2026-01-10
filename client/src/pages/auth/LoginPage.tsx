@@ -62,9 +62,9 @@ export function LoginPage() {
 
       {/* A-1 AMX Fighter Jet Decor */}
       <img
-        src="/login_bg_amx.jpg"
+        src="/a1_transparent.png"
         alt="AMX A-1"
-        className="absolute bottom-0 left-1/2 w-[1200px] max-w-none -translate-x-1/2 translate-y-[10%] opacity-30 pointer-events-none z-0 mix-blend-screen md:opacity-50"
+        className="absolute bottom-0 left-1/2 w-[1200px] max-w-none -translate-x-1/2 translate-y-[10%] opacity-80 pointer-events-none z-0 lg:opacity-100"
       />
     </div >
   );
