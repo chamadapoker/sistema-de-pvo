@@ -11,6 +11,8 @@ export function CountriesPage() {
     const [viewMode, setViewMode] = useState<'grid' | 'map' | 'alliances'>('grid');
     const [sortBy, setSortBy] = useState<'rank' | 'budget' | 'power'>('rank');
 
+    const [showComparison, setShowComparison] = useState(false);
+
     useEffect(() => {
         loadCountries();
     }, []);
@@ -128,6 +130,13 @@ export function CountriesPage() {
                     </div>
 
                     <div className="flex items-center gap-2 bg-[#111] p-1 rounded border border-[#333]">
+                        <button
+                            onClick={() => setShowComparison(true)}
+                            className="mr-2 px-4 py-1 flex items-center gap-2 text-xs font-mono uppercase bg-red-600 text-white font-bold hover:bg-red-500 transition-colors animate-pulse"
+                        >
+                            <span>⚔️ WAR GAME</span>
+                        </button>
+                        <div className="w-px h-6 bg-[#333] mx-2"></div>
                         <button
                             onClick={() => setViewMode('grid')}
                             className={`px-4 py-1 flex items-center gap-2 text-xs font-mono uppercase transition-colors ${viewMode === 'grid' ? 'bg-red-900/30 text-red-500 border border-red-900/50' : 'text-gray-500 hover:text-white'}`}
