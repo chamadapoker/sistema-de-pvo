@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { countryService, type Country } from '../../services/countryService';
+import { aiService } from '../../services/aiService';
+import ReactMarkdown from 'react-markdown';
 
 export function CountriesPage() {
     const [countries, setCountries] = useState<Country[]>([]);
@@ -417,6 +419,201 @@ export function CountriesPage() {
                     </div>
                 )}
             </div>
+            <ComparisonModal
+                isOpen={showComparison}
+                onClose={() => setShowComparison(false)}
+                countries={countries}
+            />
         </DashboardLayout>
+    );
+}
+
+function ComparisonModal({ isOpen, onClose, countries }: { isOpen: boolean; onClose: () => void; countries: Country[] }) {
+    const [selectedIdA, setSelectedIdA] = useState<number | ''>('');
+    const [selectedIdB, setSelectedIdB] = useState<number | ''>('');
+    const [analyzing, setAnalyzing] = useState(false);
+    const [report, setReport] = useState<string | null>(null);
+
+    const countryA = countries.find(c => c.id === Number(selectedIdA));
+    const countryB = countries.find(c => c.id === Number(selectedIdB));
+
+    const handleSimulation = async () => {
+        if (!countryA || !countryB) return;
+        setAnalyzing(true);
+        setReport(null);
+        try {
+            const result = await aiService.compareCountries(countryA.name, countryB.name);
+            setReport(result);
+        } catch (error) {
+            setReport("ERRO CRÍTICO NO WAR ROOM: Falha ao conectar com o serviço de inteligência artificial.");
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
+    const formatNumber = (num?: number) => {
+        if (!num) return '-';
+        if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
+        if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+        return num.toString();
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
+            <div className="bg-[#050505] border border-red-900 w-full max-w-6xl h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
+                {/* Modal Header */}
+                <div className="flex items-center justify-center p-4 border-b border-red-900/30 bg-red-950/10 relative">
+                    <h2 className="text-3xl font-black italic text-red-500 uppercase tracking-widest drop-shadow-lg animate-pulse">
+                        WAR ROOM // SIMULATION
+                    </h2>
+                    <button onClick={onClose} className="absolute right-4 top-4 text-gray-500 hover:text-white">✕</button>
+
+                    {/* Decorative Grid Lines */}
+                    <div className="absolute inset-0 pointer-events-none opacity-10"
+                        style={{ backgroundImage: 'linear-gradient(0deg, transparent 24%, #ff0000 25%, #ff0000 26%, transparent 27%, transparent 74%, #ff0000 75%, #ff0000 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, #ff0000 25%, #ff0000 26%, transparent 27%, transparent 74%, #ff0000 75%, #ff0000 76%, transparent 77%, transparent)', backgroundSize: '50px 50px' }}>
+                    </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar relative">
+
+                    {/* Selector Area */}
+                    {!report && !analyzing && (
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-20 h-full">
+                            {/* Side A */}
+                            <div className="flex-1 w-full max-w-sm space-y-4">
+                                <div className="text-center font-mono text-blue-500 text-xl tracking-widest">FORÇA AZUL</div>
+                                <select
+                                    value={selectedIdA}
+                                    onChange={(e) => setSelectedIdA(Number(e.target.value))}
+                                    className="w-full bg-[#111] border border-blue-900 text-white p-4 text-lg font-bold uppercase focus:outline-none focus:border-blue-500 transition-colors"
+                                >
+                                    <option value="">Selecione Nação...</option>
+                                    {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                                {countryA && (
+                                    <div className="bg-blue-900/10 border border-blue-900/30 p-4 text-center animate-fade-in">
+                                        <img src={countryA.flagUrl} alt={countryA.name} className="h-24 mx-auto mb-4 border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                                        <div className="text-2xl font-black text-white uppercase">{countryA.name}</div>
+                                        <div className="font-mono text-blue-400 text-sm">Rank #{countryA.militaryRank}</div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* VS Badge */}
+                            <div className="text-6xl font-black italic text-gray-700 select-none">VS</div>
+
+                            {/* Side B */}
+                            <div className="flex-1 w-full max-w-sm space-y-4">
+                                <div className="text-center font-mono text-red-500 text-xl tracking-widest">FORÇA VERMELHA</div>
+                                <select
+                                    value={selectedIdB}
+                                    onChange={(e) => setSelectedIdB(Number(e.target.value))}
+                                    className="w-full bg-[#111] border border-red-900 text-white p-4 text-lg font-bold uppercase focus:outline-none focus:border-red-500 transition-colors"
+                                >
+                                    <option value="">Selecione Nação...</option>
+                                    {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                                {countryB && (
+                                    <div className="bg-red-900/10 border border-red-900/30 p-4 text-center animate-fade-in">
+                                        <img src={countryB.flagUrl} alt={countryB.name} className="h-24 mx-auto mb-4 border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+                                        <div className="text-2xl font-black text-white uppercase">{countryB.name}</div>
+                                        <div className="font-mono text-red-400 text-sm">Rank #{countryB.militaryRank}</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Simulation Running */}
+                    {analyzing && (
+                        <div className="flex flex-col items-center justify-center h-full space-y-8">
+                            <div className="relative w-32 h-32">
+                                <div className="absolute inset-0 border-4 border-red-600 rounded-full animate-ping opacity-20"></div>
+                                <div className="absolute inset-0 border-4 border-t-red-500 border-r-transparent border-b-red-500 border-l-transparent rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center font-black text-red-500 animate-pulse">AI</div>
+                            </div>
+                            <div className="text-center space-y-2">
+                                <h3 className="text-2xl font-black text-white uppercase tracking-widest">Processando Cenários de Combate</h3>
+                                <p className="font-mono text-gray-500 text-sm typewriter">Analisando doutrinas... Comparando logística... Simulando variantes...</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Report Result */}
+                    {report && countryA && countryB && (
+                        <div className="animate-fade-in space-y-6 max-w-4xl mx-auto pb-20">
+                            {/* Match Header */}
+                            <div className="flex items-center justify-between border-b border-[#333] pb-4">
+                                <div className="flex items-center gap-4">
+                                    <img src={countryA.flagUrl} className="h-12 border border-[#444]" />
+                                    <span className="text-2xl font-black text-white uppercase">{countryA.name}</span>
+                                </div>
+                                <span className="text-red-600 font-bold text-xl italic">VS</span>
+                                <div className="flex items-center gap-4">
+                                    <span className="text-2xl font-black text-white uppercase">{countryB.name}</span>
+                                    <img src={countryB.flagUrl} className="h-12 border border-[#444]" />
+                                </div>
+                            </div>
+
+                            {/* Stats Comparison Table */}
+                            <div className="grid grid-cols-3 gap-y-4 gap-x-8 text-center font-mono text-sm bg-[#111] p-6 border border-[#222]">
+                                <div className="text-gray-500">POPULAÇÃO</div>
+                                <div className={countryA.population! > countryB.population! ? "text-green-500 font-bold" : "text-white"}>{formatNumber(countryA.population)}</div>
+                                <div className={countryB.population! > countryA.population! ? "text-green-500 font-bold" : "text-white"}>{formatNumber(countryB.population)}</div>
+
+                                <div className="text-gray-500">ORÇAMENTO</div>
+                                <div className={countryA.militaryBudgetUsd! > countryB.militaryBudgetUsd! ? "text-green-500 font-bold" : "text-white"}>${formatNumber(countryA.militaryBudgetUsd)}</div>
+                                <div className={countryB.militaryBudgetUsd! > countryA.militaryBudgetUsd! ? "text-green-500 font-bold" : "text-white"}>${formatNumber(countryB.militaryBudgetUsd)}</div>
+
+                                <div className="text-gray-500">FORÇA ATIVA</div>
+                                <div className={countryA.activeMilitary! > countryB.activeMilitary! ? "text-green-500 font-bold" : "text-white"}>{formatNumber(countryA.activeMilitary)}</div>
+                                <div className={countryB.activeMilitary! > countryA.activeMilitary! ? "text-green-500 font-bold" : "text-white"}>{formatNumber(countryB.activeMilitary)}</div>
+                            </div>
+
+                            {/* Markdown Report */}
+                            <div className="prose prose-invert prose-red max-w-none">
+                                <ReactMarkdown
+                                    components={{
+                                        h2: ({ node, ...props }) => <h2 className="text-xl font-black text-red-500 uppercase border-l-4 border-red-600 pl-3 mt-8 mb-4 tracking-widest bg-red-950/10 py-1" {...props} />,
+                                        strong: ({ node, ...props }) => <strong className="text-white font-bold" {...props} />,
+                                        ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-2 text-gray-300" {...props} />,
+                                        li: ({ node, ...props }) => <li className="pl-1" {...props} />
+                                    }}
+                                >
+                                    {report}
+                                </ReactMarkdown>
+                            </div>
+
+                            <div className="flex justify-center pt-8">
+                                <button
+                                    onClick={() => setReport(null)}
+                                    className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)]"
+                                >
+                                    NOVA SIMULAÇÃO
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Action */}
+                {!report && !analyzing && (
+                    <div className="p-6 border-t border-red-900/30 bg-black flex justify-center">
+                        <button
+                            disabled={!selectedIdA || !selectedIdB || selectedIdA === selectedIdB}
+                            onClick={handleSimulation}
+                            className="px-12 py-4 text-xl font-black italic uppercase tracking-tighter bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all shadow-[0_0_30px_rgba(220,38,38,0.5)] hover:shadow-[0_0_50px_rgba(220,38,38,0.8)] clip-path-polygon"
+                            style={{ clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0% 100%)' }}
+                        >
+                            INICIAR WAR GAME
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }
