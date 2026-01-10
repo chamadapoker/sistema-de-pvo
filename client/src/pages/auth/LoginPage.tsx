@@ -48,36 +48,7 @@ export function LoginPage() {
 
           <LoginForm />
 
-          {/* Test Credentials */}
-          <div className="mt-8 pt-6 border-t border-[#333]">
-            <p className="text-xs text-gray-500 font-mono uppercase tracking-widest mb-4 flex items-center gap-2">
-              <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              Credenciais de Teste
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Student */}
-              <div className="bg-[#111] border border-[#333] p-4 hover:border-red-900 transition-colors">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                  <p className="text-xs font-bold text-blue-500 uppercase tracking-wider">Aluno</p>
-                </div>
-                <p className="text-xs text-gray-400 font-mono mb-1">aluno@pvo.mil.br</p>
-                <p className="text-xs text-gray-400 font-mono">aluno123</p>
-              </div>
 
-              {/* Instructor */}
-              <div className="bg-[#111] border border-[#333] p-4 hover:border-red-900 transition-colors">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-yellow-600 rounded-full"></div>
-                  <p className="text-xs font-bold text-yellow-500 uppercase tracking-wider">Instrutor</p>
-                </div>
-                <p className="text-xs text-gray-400 font-mono mb-1">instrutor@pvo.mil.br</p>
-                <p className="text-xs text-gray-400 font-mono">instrutor123</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
