@@ -290,7 +290,7 @@ export function CountriesPage() {
                                                 <td className="py-4 font-bold text-white text-lg uppercase flex items-center gap-2">
                                                     <span className="text-gray-600 text-xs">#{idx + 1}</span>
                                                     {stat.name}
-                                                    {stat.name === 'NATO' && <span className="text-[10px] bg-blue-900 text-blue-200 px-1 rounded">BLUE</span>}
+                                                    {(stat.name === 'NATO' || stat.name === 'OTAN') && <span className="text-[10px] bg-blue-900 text-blue-200 px-1 rounded">BLUE</span>}
                                                     {stat.name === 'BRICS+' && <span className="text-[10px] bg-red-900 text-red-200 px-1 rounded">RED</span>}
                                                 </td>
                                                 <td className="py-4 text-center text-gray-400">{stat.count}</td>

@@ -13,7 +13,7 @@ countries_data = {
         "reserve_military": 799500,
         "military_rank": 1,
         "military_description": "Superpotência global com capacidade de projeção de poder em múltiplos teatros simultâneos. Doutrina focada em superioridade aérea e dominância naval.",
-        "alliance": "NATO",
+        "alliance": "OTAN",
         "languages": ["English"]
     },
     "Russia": {
@@ -63,7 +63,7 @@ countries_data = {
         "reserve_military": 37000,
         "military_rank": 6,
         "military_description": "Força profissional e tecnológica. Capacidade de projeção global limitada mas letal via porta-aviões e forças especiais de elite (SAS).",
-        "alliance": "NATO",
+        "alliance": "OTAN",
         "languages": ["English"]
     },
     "France": {
@@ -73,7 +73,7 @@ countries_data = {
         "reserve_military": 35000,
         "military_rank": 9,
         "military_description": "Independência estratégica. Possui tríade nuclear própria e indústria de defesa robusta (Rafale, Leclerc). Focada em intervenções rápidas.",
-        "alliance": "NATO",
+        "alliance": "OTAN",
         "languages": ["French"]
     },
     "Germany": {
@@ -83,7 +83,7 @@ countries_data = {
         "reserve_military": 15000,
         "military_rank": 19,
         "military_description": "Em processo de rearmamento (Zeitenwende). Focada em defesa coletiva da Europa Central e blindados de alta tecnologia (Leopard 2).",
-        "alliance": "NATO",
+        "alliance": "OTAN",
         "languages": ["German"]
     },
     "South Korea": {
@@ -143,7 +143,7 @@ countries_data = {
         "reserve_military": 380000,
         "military_rank": 8,
         "military_description": "Segunda maior força da NATO. Potência regional com indústria de drones (Bayraktar) líder mundial e marinha em expansão.",
-        "alliance": "NATO",
+        "alliance": "OTAN",
         "languages": ["Turkish"]
     },
     "Italy": {
@@ -153,7 +153,7 @@ countries_data = {
         "reserve_military": 19000,
         "military_rank": 10,
         "military_description": "Força naval expedicionária focada no Mediterrâneo (Mare Nostrum). Possui porta-aviões leves e forças especiais de alta qualidade.",
-        "alliance": "NATO",
+        "alliance": "OTAN",
         "languages": ["Italian"]
     },
     "Japan": {
@@ -173,7 +173,7 @@ countries_data = {
         "reserve_military": 35000,
         "military_rank": 21,
         "military_description": "O novo escudo da Europa. Investimento massivo em blindados (K2, Abrams) e artilharia (HIMARS) para deter agressão russa.",
-        "alliance": "NATO",
+        "alliance": "OTAN",
         "languages": ["Polish"]
     },
     "Argentina": {
