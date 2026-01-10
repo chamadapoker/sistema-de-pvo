@@ -30,8 +30,8 @@ export function LoginPage() {
             Sistema Tático de Reconhecimento Visual
           </p>
           <div className="mt-4 flex items-center justify-center gap-2">
-            <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
-            <span className="text-red-600 font-mono text-xs">SISTEMA ONLINE</span>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-green-500 font-mono text-xs">SISTEMA ONLINE</span>
           </div>
         </div>
 
