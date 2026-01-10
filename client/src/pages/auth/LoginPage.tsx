@@ -64,7 +64,7 @@ export function LoginPage() {
       <img
         src="/login_bg_amx.jpg"
         alt="AMX A-1"
-        className="absolute bottom-0 right-0 w-[1400px] max-w-none opacity-30 pointer-events-none translate-x-[20%] translate-y-[10%] z-0 mix-blend-screen md:opacity-50"
+        className="absolute bottom-0 left-1/2 w-[1200px] max-w-none -translate-x-1/2 translate-y-[10%] opacity-30 pointer-events-none z-0 mix-blend-screen md:opacity-50"
       />
     </div >
   );
