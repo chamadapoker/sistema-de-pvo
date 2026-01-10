@@ -298,7 +298,7 @@ export function CountryDetailsPage() {
                                         <p className="text-lime-500 font-mono text-xs shadow-black drop-shadow-md">{currentViewItem.categoryName} // {country.name}</p>
                                         {/* TAG DE FONTE */}
                                         <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest ${currentViewItem.descriptionSource === 'AI_GENERATED' || (currentViewItem.description && currentViewItem.description.includes('**ANÁLISE PVO:**'))
-                                            ? 'border-purple-500 text-purple-400 bg-purple-900/40'
+                                            ? 'border-red-500 text-red-400 bg-red-900/40'
                                             : 'border-blue-500 text-blue-400 bg-blue-900/40'
                                             }`}>
                                             {currentViewItem.descriptionSource === 'AI_GENERATED' || (currentViewItem.description && currentViewItem.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}
@@ -378,7 +378,7 @@ export function CountryDetailsPage() {
                                             <h2 className="text-2xl md:text-3xl font-black italic text-white uppercase drop-shadow-lg text-right pr-48">{comparingItem.name}</h2>
                                             <div className="flex items-center gap-2 justify-end pr-48">
                                                 <span className={`text-[9px] px-1.5 py-0.5 border rounded font-bold uppercase tracking-widest bg-black/50 ${comparingItem.descriptionSource === 'AI_GENERATED' || (comparingItem.description && comparingItem.description.includes('**ANÁLISE PVO:**'))
-                                                    ? 'border-purple-500 text-purple-400'
+                                                    ? 'border-red-500 text-red-400'
                                                     : 'border-blue-500 text-blue-400'
                                                     }`}>
                                                     {comparingItem.descriptionSource === 'AI_GENERATED' || (comparingItem.description && comparingItem.description.includes('**ANÁLISE PVO:**')) ? '🤖 IA Analysis' : '👤 Instrutor'}

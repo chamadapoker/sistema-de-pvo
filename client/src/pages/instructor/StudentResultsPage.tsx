@@ -5,23 +5,23 @@ export function StudentResultsPage() {
         <DashboardLayout>
             <div className="space-y-8 animate-fade-in">
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-purple-900/30 pb-6">
+                <div className="flex items-center justify-between border-b border-red-900/30 pb-6">
                     <div>
                         <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter">
-                            <span className="text-purple-600">Resultados</span> dos Alunos
+                            <span className="text-red-600">Resultados</span> dos Alunos
                         </h1>
                         <p className="text-sm text-gray-500 font-mono uppercase tracking-widest mt-2">
                             Acompanhar o desempenho e estatísticas
                         </p>
                     </div>
-                    <button className="btn-gaming bg-purple-700 hover:bg-purple-600 border-purple-500">
+                    <button className="btn-gaming bg-red-700 hover:bg-red-600 border-red-500">
                         Exportar Relatório
                     </button>
                 </div>
 
                 {/* Coming Soon Card */}
-                <div className="gaming-card bg-[#0a0a0a] border-2 border-purple-900/50 p-16 text-center">
-                    <svg className="w-32 h-32 mx-auto mb-8 text-purple-600 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="gaming-card bg-[#0a0a0a] border-2 border-red-900/50 p-16 text-center">
+                    <svg className="w-32 h-32 mx-auto mb-8 text-red-600 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                     <h2 className="text-3xl font-black italic text-white uppercase mb-4">
@@ -31,7 +31,7 @@ export function StudentResultsPage() {
                         O sistema de acompanhamento de resultados está sendo desenvolvido. Em breve você terá acesso a relatórios completos, gráficos de desempenho e análises detalhadas de cada aluno.
                     </p>
                     <div className="mt-8 flex items-center justify-center gap-4">
-                        <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse"></div>
+                        <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
                         <span className="text-xs font-mono text-gray-600 uppercase tracking-widest">Sistema Offline</span>
                     </div>
                 </div>
@@ -71,7 +71,7 @@ export function StudentResultsPage() {
                     {/* Statistics */}
                     <div className="gaming-card bg-[#111] border border-[#333] p-6">
                         <h3 className="text-lg font-black italic uppercase text-white mb-4 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                             </svg>
                             Estatísticas Gerais
