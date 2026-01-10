@@ -14,6 +14,15 @@ Site dedicado à história e dados técnicos dos equipamentos utilizados pelas F
 - **Artilharia:** Informações sobre sistemas como Astros II e obuseiros.
 - **Detalhes:** Inclui histórico de desenvolvimento, especificações técnicas (velocidade, armamento, motorização) e contexto operacional no Brasil.
 
+### Mapeamento de Categorias Sugerido
+| Categoria ArmasNacionais | Categoria PVO |
+|-------------------------|---------------|
+| Aeronaves - Tático      | Aeronaves     |
+| Aeronaves - Treinamento | Aeronaves     |
+| Veículos de Combate     | Blindados     |
+| Veículos Blindados Apoio| Blindados     |
+| Artilharia              | Artilharia    |
+
 **Ação Recomendada:**
 Utilizar como fonte primária para validar e enriquecer as descrições e estatísticas dos equipamentos brasileiros no banco de dados.
 
